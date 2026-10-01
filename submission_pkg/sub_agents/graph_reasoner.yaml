@@ -1,0 +1,21 @@
+name: graph_reasoner
+description: Specialised read-only sub-agent that traverses AST call and dependency graphs and searches Float32 node embeddings to map code dependencies and pinpoint root causes.
+model: gemma-4-31b-it-qat-w4a16-ct
+adapter: tool_lora
+
+# Load system instruction relative to submission root
+prompt: !include ../prompts/graph_reasoner.md
+
+## Tools supplied by the harness or custom skills
+tools:
+  - name: query_ast_graph
+    description: "Queries NetworkX JSON call/dependency graphs for incoming and/or outgoing callers, class heirarchies, and symbol relationships."
+  - name: search_similar_code
+    description: "Performs cosine similarity search against float32 node embeddings (.npy) given a query embedding or symbol name."
+  - name: load_symbol_ast
+    description: "Retrieves the exact AST node subtree and metadata for a specific symbol node_id."
+  - name: run_skill_script
+    description: "Executes custom sandboxed scripts inside skills/graph navigation"
+
+configs:
+  sampling: !include ../configs/sampling.yaml
