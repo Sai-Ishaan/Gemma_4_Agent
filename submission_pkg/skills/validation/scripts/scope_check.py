@@ -16,7 +16,7 @@ def extract_authorized_files(report_path: Path) -> Set[str]:
         authorized = set()
 
         for item in data.get("primary_target_symbols", []):
-            if "file_path" in item: ## extracting from primary target symbols
+            if isinstance(item, dict) and "file_path" in item: ## extracting from primary target symbols
                 authorized.add(str(Path(item["file_path"]).as_posix()))
 
         for scope_entry in data.get("suggested_investigation_scope", []):
@@ -36,14 +36,15 @@ def extract_patch_modified_files(patch_path: Path)-> Set[str]:
     patch_text = patch_path.read_text(encoding="utf-8")
 
     ### Matches `diff --git a/path_to_file` 
-    pattern = re.compile(r"^--- a/(.+)$", re.MULTILINE)
+    pattern = re.compile(r"^--- (?:a/)?([^\s\t]+)", re.MULTILINE)
 
     matches = pattern.findall(patch_text)
 
     modified_files = set()
     for file_str in matches:
-        if file_str!= "/dev/null":
-            modified_files.add(str(Path(file_str).as_posix()))
+        file_clean = file_str.strip()
+        if file_clean and file_clean != "/dev/null":
+            modified_files.add(str(Path(file_clean).as_posix()))
     return modified_files
 
 def main():
@@ -72,7 +73,7 @@ def main():
     has_violation = len(unauthorized)>0
     penalty = -0.5*len(unauthorized) if has_violation else 0.0
 
-    op = {
+    output = {
         "passed": not has_violation,
         "reward_penalty": penalty,
         "authorized_scope": sorted(list(authorized_files)),
