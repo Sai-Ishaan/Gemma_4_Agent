@@ -1,0 +1,52 @@
+# =====================================================================
+# Phase 1: Local Sandbox, Orchestration & Multi-Graph Schema
+# =====================================================================
+
+# Core Frameworks & Agent Orchestration
+google-genai
+pydantic>=2.0.0
+pyyaml>=6.0
+
+# Graph Processing & AST Parsing
+networkx>=3.0
+tree-sitter>=0.20.0
+tree-sitter-python>=0.20.0
+
+# Validation, Guardrails & Code Linting
+flake8>=6.0.0
+black>=23.0.0
+pytest>=7.0.0
+gitpython>=3.1.0
+
+# Local Vector Ops & Similarity
+numpy>=1.24.0
+scikit-learn>=1.2.0
+
+# =====================================================================
+# Phase 2 & 3: Synthetic Data Curriculum & Trajectory Rollouts (RTX 5090)
+# =====================================================================
+
+# Dataset Processing & Codebase Mutation
+datasets>=2.14.0
+unidiff>=0.7.4
+tqdm>=4.65.0
+
+# Deep Learning & Trajectory Execution
+torch>=2.2.0
+transformers>=4.40.0
+accelerate>=0.28.0
+
+# =====================================================================
+# Phase 4: LoRA Fine-Tuning & Quantized Inference (RTX 5090)
+# =====================================================================
+
+# Parameter-Efficient Fine-Tuning & Acceleration
+unsloth>=2024.4
+peft>=0.10.0
+bitsandbytes>=0.43.0
+trl>=0.8.0
+
+# Quantization & Model Optimization
+optimum>=1.18.0
+auto-gptq>=0.7.0
+scipy>=1.10.0
