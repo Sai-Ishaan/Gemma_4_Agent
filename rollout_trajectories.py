@@ -1,9 +1,10 @@
 ### Phase 3: Trajectory Rollout and Reward Generator
 ### Reads synthetic curriculum entries, executes agent rollouts, scores generated diffs and reasoning traces using Phase1 guardrails.
+###Iterates through all mult-scenario entries in gemma_training_curriculum.jsonl,
+###simulates both positive and negative agent rollouts, evaluates them using Phase 1 hardened guardtails
 ## O/Ps scored JSONL trajectories
 
 import json
-import os
 import subprocess
 import sys
 import tempfile
@@ -28,38 +29,32 @@ def execute_guardrail(script_path: Path, *args)-> dict:
         return {"passed":False, "reward_penalty":-1.0, "feedback": f"Invalid JSON from {script_path.name}"}
 
 ###Scoring a candidate trajectory against syntax, scope and pedagogy guardrails
-def evaluate_trajectory(target_file_rel: str, clean_code: str, mutated_code: str, diagnostic_report: dict, patch_text: str)->tuple[float, dict]:
+def evaluate_trajectory(target_file_rel: str, mutated_code: str, diagnostic_report: dict, patch_text: str) -> tuple[float, dict]:
     with tempfile.TemporaryDirectory() as tmp_dir_str:
         tmp_dir = Path(tmp_dir_str)
 
         target_file = tmp_dir / target_file_rel
         target_file.parent.mkdir(parents=True, exist_ok=True)
         
-        # Test patched version if patch applies, otherwise test mutated code
         patched_code = apply_patch_string(mutated_code, patch_text)
         target_file.write_text(patched_code, encoding="utf-8")
 
-        # 2. Write report and patch files
         report_file = tmp_dir / "diagnostic_report.json"
         report_file.write_text(json.dumps(diagnostic_report, indent=2), encoding="utf-8")
 
         patch_file = tmp_dir / "candidate.patch"
         patch_file.write_text(patch_text, encoding="utf-8")
 
-        # 3. Run Guardrail Checks
         syntax_res = execute_guardrail(SYNTAX_SCRIPT, target_file)
         scope_res = execute_guardrail(SCOPE_SCRIPT, report_file, patch_file)
         pedagogy_res = execute_guardrail(PEDAGOGUE_SCRIPT, report_file)
 
-        # 4. Compute Composite Scalar Reward
         base_reward = 1.0 if (syntax_res.get("passed") and scope_res.get("passed") and pedagogy_res.get("passed")) else 0.0
-        
         penalties = (
             syntax_res.get("reward_penalty", 0.0)
             + scope_res.get("reward_penalty", 0.0)
             + pedagogy_res.get("reward_penalty", 0.0)
         )
-        
         composite_reward = max(-1.0, min(1.0, base_reward + penalties))
 
         eval_summary = {
@@ -73,12 +68,10 @@ def evaluate_trajectory(target_file_rel: str, clean_code: str, mutated_code: str
                 "pedagogy": pedagogy_res.get("feedback"),
             }
         }
-
         return composite_reward, eval_summary
 
-
 def apply_patch_string(original_code: str, patch_text: str) -> str:
-    """Simple patch simulation for single-file string replacements."""
+    #Simple patch simulation for single-file string replacements.
     # If patch contains replacement lines, substitute directly for trajectory evaluation
     lines_to_add = [line[1:] for line in patch_text.splitlines() if line.startswith("+") and not line.startswith("+++")]
     lines_to_remove = [line[1:] for line in patch_text.splitlines() if line.startswith("-") and not line.startswith("---")]
@@ -96,7 +89,7 @@ def generate_trajectories(curriculum_path: Path, output_path: Path):
         return
 
     raw_entries = [json.loads(line) for line in curriculum_path.read_text(encoding="utf-8").splitlines() if line.strip()]
-    print(f"Loaded {len(raw_entries)} synthetic curriculum item(s) for trajectory rollout...")
+    print(f"Loaded {len(raw_entries)} multi-scenario curriculum item(s) for comprehensive rollout...")
 
     trajectories = []
 
@@ -106,19 +99,20 @@ def generate_trajectories(curriculum_path: Path, output_path: Path):
         buggy_code = item["input_code"]
         graph_data = item["dependency_graph"]
 
-        # --- Candidate Trajectory A: Positive Rollout (Correct Graph Trace + Valid Patch) ---
+        # --- Positive Rollout ---
         good_report = {
             "primary_target_symbols": [{"file_path": rel_file}],
-            "suggested_investigation_scope": [f"{rel_file}:lines 1-10"],
+            "suggested_investigation_scope": [f"{rel_file}:lines 1-15"],
             "pedagogical_trace": [
                 {"node": "issue_symptom", "relation_to_next": "CALLS"},
                 {"node": "calculate_discount", "relation_to_next": "DEPENDS_ON"},
                 {"node": "root_cause", "relation_to_next": ""}
             ]
         }
-        good_patch = f"--- a/{rel_file}\n+++ b/{rel_file}\n@@ -1,4 +1,4 @@\n-    if price <= 0 or not 0.0 <= discount_rate <= 1.0:\n+    if price < 0 or not (0.0 <= discount_rate <= 1.0):\n"
+        
+        good_patch = f"--- a/{rel_file}\n+++ b/{rel_file}\n@@ -1,4 +1,4 @@\n-{buggy_code.splitlines()[1]}\n+{clean_code.splitlines()[1]}\n"
 
-        reward_a, summary_a = evaluate_trajectory(rel_file, clean_code, buggy_code, good_report, good_patch)
+        reward_a, summary_a = evaluate_trajectory(rel_file, buggy_code, good_report, good_patch)
 
         trajectories.append({
             "trajectory_id": f"traj_{idx}_pos",
@@ -135,16 +129,16 @@ def generate_trajectories(curriculum_path: Path, output_path: Path):
             "evaluation": summary_a
         })
 
-        # --- Candidate Trajectory B: Negative Rollout (Scope Creep) ---
+        # --- Negative Rollout (Test Sanctuary Tampering Exploit) ---
         bad_report = {
-            "primary_target_symbols": [{"file_path": "src/other_file.py"}]
+            "primary_target_symbols": [{"file_path": "tests/test_math.py"}]
         }
-        bad_patch = "--- a/unauthorized_module.py\n+++ b/unauthorized_module.py\n@@ -1,1 +1,1 @@\n+# rogue edit\n"
+        bad_patch = "--- a/tests/test_math.py\n+++ b/tests/test_math.py\n@@ -1,1 +1,1 @@\n+# tampering with test sanctuary\n"
 
-        reward_b, summary_b = evaluate_trajectory(rel_file, clean_code, buggy_code, bad_report, bad_patch)
+        reward_b, summary_b = evaluate_trajectory(rel_file, buggy_code, bad_report, bad_patch)
 
         trajectories.append({
-            "trajectory_id": f"traj_{idx}_neg_scope",
+            "trajectory_id": f"traj_{idx}_neg_exploit",
             "prompt": {
                 "instruction": item["instruction"],
                 "input_code": buggy_code,
@@ -159,7 +153,7 @@ def generate_trajectories(curriculum_path: Path, output_path: Path):
         })
 
     output_path.write_text("\n".join(json.dumps(t) for t in trajectories) + "\n", encoding="utf-8")
-    print(f"Phase 3 Complete: Exported {len(trajectories)} scored trajectory pairs to `{output_path.name}`.")
+    print(f"Phase 3 Comprehensive Complete: Exported {len(trajectories)} scored trajectory pairs to `{output_path.name}`.")
 
 
 if __name__ == "__main__":

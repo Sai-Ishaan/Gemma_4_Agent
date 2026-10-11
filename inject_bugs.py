@@ -5,7 +5,7 @@ import random
 from pathlib import Path
 import astor
 import networkx as nx
-
+import argparse
 
 class CallGraphVisitor(ast.NodeVisitor):
     def __init__(self):
@@ -60,8 +60,24 @@ class BugInjector(ast.NodeTransformer):
                 node.op = op_map[type(node.op)]
                 self.mutated = True
                 self.bug_type = "Arithmetic Error"
-        return self.generic_visit(node)
+        return self.generic_visit(node) 
 
+    def visit_If(self, node):
+        ##control flow inversion which negates if condition
+        if not self.mutated and random.random() <=self.mutation_rate:
+            node.test = ast.UnaryOp(op=ast.Not(), operand=node.test)
+            self.mutated = True #Wrap test in an ast.Not() unary operation
+            self.bug_type = "Control Flow Inversion error"
+        return self.generic_visit(node)    
+
+    def visit_Return(self, node):
+        ##return value mutation (forces null/zero return)
+        if not self.mutated and random.random() <= self.mutation_rate and node.value is not None:
+            ## replace actual return value with constant 0 or none
+            node.value = ast.Constant(value=0)
+            self.mutated = True
+            self.bug_type = "Return Value Mutation Error"
+        return self.generic_visit(node)    
 
 def process_file(file_path: Path):
     try:
@@ -114,7 +130,6 @@ def generate_curriculum(target_path, output_file, num_workers=4):
 
 
 if __name__ == "__main__":
-    import argparse
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", "-t", required=True, help="Target file or folder")

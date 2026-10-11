@@ -46,7 +46,7 @@ def check_syntax(file_path: Path)-> Dict[str, Any]:
 
 def main():
     if len(sys.argv) < 2:
-        print(json.dump({
+        print(json.dumps({
             "passed": False,
             "reward_penalty": -1.0,
             "feedback": "Usage: python syntax_check.py <file1.py> [file2.py .....]"
