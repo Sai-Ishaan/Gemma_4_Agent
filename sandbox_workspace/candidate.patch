@@ -1,5 +1,0 @@
---- a/src/utils.py
-+++ b/src/utils.py
-@@ -1,2 +1,2 @@
--    return f"${val:.2f}"
-+    return f"EUR {val:.2f}"
