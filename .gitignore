@@ -2,3 +2,5 @@
 __pycache__/
 /.pytest_cache/
 /clean_repo/
+/sandbox_workspace/
+/sandbox_tdd_workspace/

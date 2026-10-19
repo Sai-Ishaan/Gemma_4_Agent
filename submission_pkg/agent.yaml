@@ -1,0 +1,27 @@
+# agent.yaml - Kaggle Gemma 4 Developer Agent Manifest
+version: "1.0"
+agent_name: "GemmaGuard-CS-Agent"
+description: "Offline-capable local code repair agent with static security guardrails and TDD evaluation gates."
+
+# Model Configuration (Points to your trained LoRA weights after 5090 fine-tuning)
+model:
+  base_model: "google/gemma-4-or-equivalent"
+  adapter_path: "./adapters/gemma_lora_adapter" # Path to your compiled Unsloth PEFT weights
+  device: "cuda"
+
+# Execution Environment & Limits
+runtime:
+  python_version: "3.13"
+  max_execution_time_seconds: 300
+  allow_internet: false # Strictly offline sandbox environment
+
+# Registered Guardrails & Validation Tools
+tools:
+  syntax_validator: "submission_pkg/skills/validation/scripts/syntax_check.py"
+  scope_validator: "submission_pkg/skills/validation/scripts/scope_check.py"
+  pedagogue_validator: "submission_pkg/skills/validation/scripts/pedagogue_check.py"
+
+# Entrypoint definition for the evaluation runner
+entrypoint:
+  script: "run_agent.py"
+  working_dir: "."
