@@ -190,6 +190,7 @@ becomes more complex.
 - [ ] Verify that the evaluator checks the exact code that was executed.
 - [ ] Produce one machine-readable result for both successful and failed runs.
 
+#### Mock Repository at hand: 
 #### Observations after Running Mock Repository:
 ```python -m pytest -v
 ======================== test session starts ========================
@@ -247,5 +248,50 @@ def discount_rate(subtotal: float)->float:
 
 def discounted_total(subtotal: float)-> float:
     return round(subtotal * (1.0 -discount_rate(subtotal)), 2)
+
+
+python -c "import json, jsonschema; d=json.load(open('fixtures/tasks.json', encoding='utf-8')); s=json.load(open('fixtures/task.schema.json', encoding='utf-8')); jsonschema.validate(d, s); print('Manifest schema validation: PASS')"
+Manifest schema validation: PASS    
 ```
 
+The current tests imply that the existing behavior of the scripts is according to the tests at present. But it doesn't cover every possible bug.
+
+Taking the example of `discounts.py`:
+
+```
+def discount_rate(subtotal: float)->float:
+    if subtotal<100:
+        return 0.0
+    if subtotal < 500:
+        return 0.05
+    return 0.10
+```
+
+The policy currently implemented:
+![alt text](image-1.png)
+
+This serves as a clean, good reference
+
+#### Implementation Log and Milestone Status
+(I) Milestone 1: Environment and Clean Baseline
+ - Status: Verified for all the items in checklist below
+ - Environment
+   * Working directory: E:\Gemma_4_Agent\mock_python_repo
+   * Python 3.11.5
+   * OS: Windows (win32)
+   * Test Runner: pytest 8.4.2 in the mock repo's .venv
+ -  Verified Checklist
+   - [Yes] Python Executes from the mock environment
+   - [Yes] Discount specific suite: 7 passed in 0.10 seconds
+   - [Yes] Full baseline suite: 16 passed in 0.08 seconds
+   - [Yes] Public task manifest validates against JSON schema
+   - [Yes] Discount policy and tested boundary behavior inspected
+
+ - Not yet Verified:
+   - [] Independent Git history for the mock repository
+   - [] Reproducible reset to a clean benchmark revision
+   - [] Task-specific faulty revision
+   - [] Acceptance tests that Detect defects
+   - [] Exact-patch evaluation and structured run results
+  
+   
