@@ -16,19 +16,7 @@ To build a Python mock repository and set a repair tasks that establishes whethe
  vii) Return structured, reproducible outcomes, that can later support reward and preference-data generation.
 
 #### Initial Benchmark Design
-______________________________________________________________________________________________________
-ID     |      Task Category         | What to Test out?                                               |
-_______|____________________________|_________________________________________________________________|
-P0-01   | Single function repair     | Can agent fix Comparison/Boundary Bugs                          |
-P0-02   | Logic Repair               | Can it correct arithmetic or return value issues                |
-P0-03   | Feature Development        | Add a feature while preserving an existing base                 |
-P0-04   | Direct dependency          | Can it identify a caller or related function                    |
-P0-05   | Bounded multi-hop retrieval| Can discover a dependency beyond the initial neighborhood or not|
-P0-06   | Scope Enforcement          | Does it avoid changing protected or unauthorised files          |
-P0-07   | Distracting Context        | Can it avoid modifying an unrelated helper?                     |
-P0-08   | Regression Prevention      | Does the change preserve existing behavior?                     |
-P0-09   | Ambiguous requirements     | Does it require clarification and not rely on Guesswork         |
-_______|____________________________|_________________________________________________________________|
+![alt text](image.png)
 
 Each benchmark task-case will be recorded in the following format:
 {
