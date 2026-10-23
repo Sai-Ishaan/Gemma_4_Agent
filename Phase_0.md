@@ -19,15 +19,15 @@ To build a Python mock repository and set a repair tasks that establishes whethe
 ______________________________________________________________________________________________________
 ID     |      Task Category         | What to Test out?                                               |
 _______|____________________________|_________________________________________________________________|
-P0-1   | Single function repair     | Can agent fix Comparison/Boundary Bugs                          |
-P0-2   | Logic Repair               | Can it correct arithmetic or return value issues                |
-P0-3   | Feature Development        | Add a feature while preserving an existing base                 |
-P0-4   | Direct dependency          | Can it identify a caller or related function                    |
-P0-5   | Bounded multi-hop retrieval| Can discover a dependency beyond the initial neighborhood or not|
-P0-6   | Scope Enforcement          | Does it avoid changing protected or unauthorised files          |
-P0-7   | Distracting Context        | Can it avoid modifying an unrelated helper?                     |
-P0-8   | Regression Prevention      | Does the change preserve existing behavior?                     |
-P0-9   | Ambiguous requirements     | Does it require clarification and not rely on Guesswork         |
+P0-01   | Single function repair     | Can agent fix Comparison/Boundary Bugs                          |
+P0-02   | Logic Repair               | Can it correct arithmetic or return value issues                |
+P0-03   | Feature Development        | Add a feature while preserving an existing base                 |
+P0-04   | Direct dependency          | Can it identify a caller or related function                    |
+P0-05   | Bounded multi-hop retrieval| Can discover a dependency beyond the initial neighborhood or not|
+P0-06   | Scope Enforcement          | Does it avoid changing protected or unauthorised files          |
+P0-07   | Distracting Context        | Can it avoid modifying an unrelated helper?                     |
+P0-08   | Regression Prevention      | Does the change preserve existing behavior?                     |
+P0-09   | Ambiguous requirements     | Does it require clarification and not rely on Guesswork         |
 _______|____________________________|_________________________________________________________________|
 
 Each benchmark task-case will be recorded in the following format:
@@ -160,7 +160,7 @@ The following metrixs are taken into considering:
  - **Task Completion Rate:** Tasks meeting their specified expected behavior
  - **Repair Success Rate:** Repair tasks whose required acceptance tests pass.
  - **Regression Rate:** Candidate patches that break previously passing tests.
- - **Scope Compliance:** Fraction of tasks with no authorised changes; report hard violations separately
+ - **Scope Compliance:** Fraction of tasks with no unauthorised changes; report hard violations separately
  - **Patch Applicability Rate:** Candidate patches that apply to the evaluated base revision.
  - **Syntax-validity Rate:** Patches that leave modified Python files syntatically valid.
  - **Clarification/Rejection Quality:** Ambiguous and out-of-scope tasks handled correctly.
@@ -193,3 +193,71 @@ Phase 0 is ready to close when:
 Phase 0 does not require high repair accuracy. Its purpose is to make
 failures interpretable and comparisons reproducible before the system
 becomes more complex.
+
+#### Phase 0 Implementation Checklist
+[Done!] Define the manifest schema and stable task IDs.
+[Done!] Create the mock Python repository and its initial passing tests.
+[ ] Record a clean starting revision for every benchmark task.
+[ ] Implement evaluator checks for patch applicability, syntax, tests, regressions, and protected paths.
+[ ] Verify that the evaluator checks the exact code that was executed.
+[ ] Produce one machine-readable result for both successful and failed runs.
+
+#### Observations after Running Mock Repository:
+`python -m pytest -v
+======================== test session starts ========================
+platform win32 -- Python 3.11.5, pytest-8.4.2, pluggy-1.7.0 -- E:\Gemma_4_Agent\mock_python_repo\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: E:\Gemma_4_Agent\mock_python_repo
+configfile: pytest.ini
+testpaths: tests
+collected 16 items                                                   
+
+tests/test_discounts.py::test_discount_rate_boundaries[0-0.0] PASSED [  6%]
+tests/test_discounts.py::test_discount_rate_boundaries[99.99-0.0] PASSED [ 12%]
+tests/test_discounts.py::test_discount_rate_boundaries[100-0.05] PASSED [ 18%]
+tests/test_discounts.py::test_discount_rate_boundaries[499.99-0.05] PASSED [ 25%]
+tests/test_discounts.py::test_discount_rate_boundaries[500-0.1] PASSED [ 31%]
+tests/test_discounts.py::test_discount_rate_boundaries[750-0.1] PASSED [ 37%]
+tests/test_discounts.py::test_discounted_total PASSED          [ 43%]
+tests/test_formatting.py::test_currency_format PASSED          [ 50%]
+tests/test_formatting.py::test_invalid_currency_rejected PASSED [ 56%]
+tests/test_inventory.py::test_available_quantity PASSED        [ 62%]
+tests/test_inventory.py::test_can_fulfill PASSED               [ 68%]
+tests/test_inventory.py::test_negative_inventory_rejected PASSED [ 75%]
+tests/test_pricing.py::test_order_price_applies_discount PASSED [ 81%]
+tests/test_pricing.py::test_order_price_without_discount PASSED [ 87%]
+tests/test_pricing.py::test_negative_inputs_rejected[-1-2] PASSED [ 93%]
+tests/test_pricing.py::test_negative_inputs_rejected[1--2] PASSED [100%]
+
+======================== 16 passed in 0.08s =========================
+(.venv) PS E:\Gemma_4_Agent\mock_python_repo> python -m pytest .\tests\test_discounts.py -v
+======================== test session starts =========================
+platform win32 -- Python 3.11.5, pytest-8.4.2, pluggy-1.7.0 -- E:\Gemma_4_Agent\mock_python_repo\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: E:\Gemma_4_Agent\mock_python_repo
+configfile: pytest.ini
+collected 7 items                                                     
+
+tests/test_discounts.py::test_discount_rate_boundaries[0-0.0] PASSED [ 14%]
+tests/test_discounts.py::test_discount_rate_boundaries[99.99-0.0] PASSED [ 28%]
+tests/test_discounts.py::test_discount_rate_boundaries[100-0.05] PASSED [ 42%]
+tests/test_discounts.py::test_discount_rate_boundaries[499.99-0.05] PASSED [ 57%]
+tests/test_discounts.py::test_discount_rate_boundaries[500-0.1] PASSED [ 71%]
+tests/test_discounts.py::test_discount_rate_boundaries[750-0.1] PASSED [ 85%]
+tests/test_discounts.py::test_discounted_total PASSED           [100%]
+
+========================= 7 passed in 0.10s ==========================
+(.venv) PS E:\Gemma_4_Agent\mock_python_repo> Get-Content .\src\discounts.py
+### Discount policy for Phase 0 Mock Repo
+
+def discount_rate(subtotal: float)->float:
+    if subtotal<100:
+        return 0.0 ## 0% below 100
+    if subtotal < 500:
+        return 0.05 ## 5% from 100 to <500
+    return 0.10 ## 10% from 500 and above
+
+def discounted_total(subtotal: float)-> float:
+    return round(subtotal * (1.0 -discount_rate(subtotal)), 2)
+`
+

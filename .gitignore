@@ -4,3 +4,5 @@ __pycache__/
 /clean_repo/
 /sandbox_workspace/
 /sandbox_tdd_workspace/
+mock_python_repo\.venv
+mock_python_repo/
