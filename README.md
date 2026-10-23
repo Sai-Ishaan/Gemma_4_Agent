@@ -1,12 +1,51 @@
-## Gemma-4 Developer Agent: From 'Vibe Coding' to 'Optimized Engineering'
+# Gemma-4 Developer Agent: From 'Vibe Coding' to 'Optimized Engineering'
 
+#### Competition and Research Reference:
 - The following is our submission for the [Gemma-4 Google Developer Agent Competition] (https://www.kaggle.com/competitions/gemma-4-developer-agent/overview) 
 
+#### Description
+A Research prototype for graph-guided, locally executed code repair with Gemma 4 post-training.
+
+This agent is built to explore whether a compact, targeted context pipeline, specialised agent roles, post-training and deterministic validation can help a locally run model repair Python code efficiently without depending on hosted LLM APIs, and that too as a reliable tool for developers. 
+
+The project is being developed for the Gemma 4 Developer Agent challenge, hosted on Kaggle along with the associated research track. The core research interest is to see how the following components interact and work together: Graph-Guided Context Section, Constraint Patch Generation, Training Data, and Execution Feedback grounded under verifiable outcomes. (Status: Work in Progress, using a local LLM, Llama 3.2:3b through Ollama for local orchestration, as a temporary stand-in while suitable GPU access is arranged.)
+
+
 #### <u> Introduction </u>
-Current market coding agents rely on internet-connected models, which require a powerful commercial infrastructure. This makes advance Software Development and Engineering out of reach for the general audience. This base encompasses the various methologies and approaches used to fine-tune Gemma-4 to not only help developers navigate and optimise their software development workflow and tasks, but also optimize it on existing market hardware.
+Current market coding agents rely on internet-connected models, which require a powerful commercial infrastructure. This makes advance Software Development and Engineering out of reach for the general audience. This base encompasses the various methologies and approaches used to fine-tune Gemma-4 to not only help developers navigate and optimise their software development workflow and tasks, but also optimize it on existing market hardware. 
+
+This project is aimed at bringing a consolidated architecture that brings a novel approach into making Fine-Tuning, and Optimising easier and effective. It starts off with a working hypothesis that targeted graph-guided context, constrained tool use, deterministic execution feedback, and workflow-focused post-training can complement one another, in order to improve local code-repair reliability under bounded compute and context budgets.
+
+The complementary research paper shall describe further on the architecture, trade-offs, implementation status, evaluation protocol, ablations and negative results as well as the improvements.
 
 #### <u> Goal </u>
-Post-train an open source model into a reliable agent for navigating complex coding tasks and codebases, and draft fixes for real software issues, helping in accelerating developer workflow.
+Post-train an open source model into a reliable agent for navigating complex coding tasks and codebases, and draft fixes for real software issues, helping in accelerating developer workflow. This can be broken down into the following:
+
+ - **Keep the agent Local-First**: Targeting inference and repair workflows that don't require a hosted LLM API.
+ - **Selective Context Usage**: Starting from the target function or file, we then retrieve a bounded dependency neighborhood and relevant Git history only when required.
+ - **Constrain Changes**: Validating proposed patches against explicit scope rules and preserve developer controls over whether changes can be accepted.
+ - **Execution as Evidence**: Running targeted and regression tests in a controlled workspace/sandbox rather than trusting model assertions about accuracy.
+ - **Train for the workflow**: Building verified repair examples and preference data that encourages investigating, appropriate tool usage, and evidence-backed fixes.
+ - **Measure the architecture**: Comparison between components and baselines under consistent tasks and resource budgets.
+
+#### Architecture at a Glace
+ 
+[Developer Issue and Constraints]
+                |
+                V
+[Targeted Context and Builder (Target function/file, local AST and dependency neighborhood, optimal bounded Git History)]                 
+                |
+                V
+[Local Model and specialised agentic workflow (Investigate and Diagnose, Propose a focused patch, request clarification when requirements are ambiguous)]
+                |
+                V
+[Deterministic Validation and Execution (Patch Applicability and Scope, Syntax Checks, Targeted tests and Regression tests, Structured Outocomes and Feedback)]
+                |
+                V
+[ Developer Reviews Proposed Changes]
+                |
+                V
+[Verified Outcomes Inform Evalution and Training Data]                    
 
 #### Initial Approach: Model Distillation/Trajectory Replay Loop:
 
@@ -39,43 +78,59 @@ Since the goal is to make engineering more structured, moving away from blindly 
 
 #### Proposed Development LifeCycle
 
-A Four-Phase Development Cycle has been proposed, spanning from setting up local guardrails to LoRA Fine-Tuning:
+A Four-Phase Development Cycle along with a pre-requisite has been proposed, spanning from setting up local guardrails to LoRA Fine-Tuning:
 
-- **Phase 1 (Local Orchestration and Guardrails Setup):** Deterministic validation scripts for syntaxes, sematics, and training checks are setup in host hardware, returning structured JSON error reports and scalar reward penalties (R ∈ [-1.0, 1.0]). Using a simulated mock agent, it validates the pipeline mechanics.
+- **Phase 0 (Mock Repository Evaluation Specification):** Define a small Python repository and a reproducible set of in-scope, out-of-scope, ambiguous and edge-case repair tasks. Establishing ground truth, baseline behavior, hard constraints and metrics before expanding the guardrails or dataset
 
-- **Phase 2 (Synthetic Curriculum Engine):** A testbed is created to auto-generate baseline codebases with zero-price boundary unit test suites (`create_clean_testbed.py`). Synthetic Bugs are then injected using a script via AST `NodeTransformer` mutations (`inject_bugs.py`), with the expectated unit tests to fail. This will automatically generate ground-truth bug-fix pairs (`gemma_training_curriculum.jsonl`) with linked NetworkX dependency graphs.
+- **Phase 1 (Local Orchestration and Guardrails Setup):** Deterministic validation scripts for syntaxes, sematics, and training checks are setup in host hardware, returning structured JSON error reports and scalar reward penalties (R ∈ [-1.0, 1.0]). Using a simulated mock agent, it validates the pipeline mechanics.Here, we treat validation outputs as structured evidence, not as a substitute for developer intent.
 
-- **Phase 3 (Trajectory Rollouts and Reward Modeling):** This phase is dedicated to formulate agent prompts from synthetic curriculum items, and execute candidate action rollouts by combining reasoning steps, diagnostic reports, and patch diffs.
+- **Phase 2 (Synthetic Curriculum Engine):** Starting with a target function or file, we expand by adding relevant callers, callees, imports, and tests and to the neighborhood selectively when evidence requires it. Adding bounded Git history where it provides useful context. Then we validate each synthetic bug with tests that help distinguish the real defects from a superficial mutation
 
-- **Phase 4 (Remote LoRA Distillation and Deployment):** Using Unsloth LoRa fine-tuning on gemma-4, and export PEFT adapters and packages for evaluation.
+- **Phase 3 (Trajectory Rollouts and Reward Modeling):** This phase is dedicated to formulate agent prompts from synthetic curriculum items, and execute candidate action rollouts by combining reasoning steps, diagnostic reports, and patch diffs. Tool-use trajectories and candidate repairs are generated, along with building preferences and reward labels from reproducible validator and test outcomes. Every example is later audited for task identity, context, patch consistency, evidence and label correctness.
 
+- **Phase 4 (Remote LoRA Distillation and Deployment):** Using Unsloth LoRa fine-tuning on gemma-4 base model. Evaluate the adapters against a baseline, then optimize context budgets, tool policies and runtime packaging for the target environment.
 
+#### Evaluation Principles
+ The following are the expected evaluation metrices aimed to report by the end of this development cycle:
 
+   - Repair Success on Held-Out Tasks
+   - Regression Rate
+   - Scope and Protected-Life compliance
+   - Patch applicability and syntax validity
+   - Context tokens and Graph nodes retrieved
+   - Tool calls and execution attempts per successful repair
+   - Recovery after execution feedback
+   - Latency and resource usage
 
-#### Architectural Design
-Standard LLM coding agents rely mostly on raw text context windows, which fall prey to the 'memory-wall' effect and diluted attention when handling complex directories. To overcome this, our system introduces a **Multi-Dimensional Graph Architecture** which deconstructs the project semantics into three distinct layers before Context Assembly:
+Results will make use of the same set of tasks and comparable resource budgets. The mock repository suite is used as an engineering evaluation tool.
 
- - **Abstract Syntax Layer (AST):** Extracts structural hierarchies (CallGraphVisitor) across functions and classes, allowing the agent to trace symbol dependencies without thousands of raw code tokens.
+#### Safety and Limitations
+   - Temporary directories and timeouts do not, by themselves, prevent network access, arbitrary filesystem access, child-process creation or resource exhaustion, hence the current subprocess execution isn't a security boundary.
 
- - **DFG (Data Flow Graph) Layer:** Maps variable state changes, parameter pass-throughs and returns dependencies across module boundaries.
+   - Static Syntax and Scope Checks cannot establish semantic correctness.
 
- - **Git commit DAG (Directed Acyclic Graph) Layer:** Indexes historical code churn and recent commit deltas to prioritise investigation scopes of modified snippets or blocks in specific regions.
+   - A structured diagnostic trace is not proof that the diagnosis is correct.
 
-The localised NetworkX subgraph data along with target code snippets are then fed into `gemma-4-31b-it-qat-w4a16-ct`. This ensures the agent reduces context overhead and eliminates scope hallucination.
+   - Synthetic data can contain invalid mutations, trivial examples, or misleading labels. Curriculum items must be validated before they are used for training.
+   
+   - Passing targeted tests is useful evidence, although maybe incomplete; regression and scope checks remain necessary.
 
-#### Development Approach and Guardrails
- 
- To make the seamless transition from a baseless 'Vibe-Coding' to 'Deterministic Software Development', every propoed agent action should pass through a modular verification suite. The following scripts are built in our pipeline in order to enforce individual engineering boundaries:
-  
-  - **`syntax_check.py`(For Code Validity):** Parses modified files using `ast.parse()` to catch compilation errors, indentation mis-matches, or bad diffs before test suite execution.
+   - There is No Claim of Gemma 4 performance improvement made until controlled Post-Training Evaluation is complete. 
 
-  - **`scope_check.py`(For Containment and Security):** It validates generated patch files against approved symbol scopes in `diagnostic_report.json` to prevent unauthorised file edits or out-of-scope actions.
+#### Repository Components
+ - `syntax_check.py`: Python Syntax Validation
+ - `scope_check.py`: Proposed Patch Scope Validation
+ - `pedagogue_check.py`: Structured diagnostic-trace validation
+ - `sandbox_repl.py`: Sub-process based Python execution wrapper.
+ - `create_cleam_testbed.py`: Starter testbed generation
+ - `inject_bugs.py`: AST-Based Synthetic Bug Injection
+ - `rollout_trajectories.py`: Prototype trajectory/preference-data generation
+ - `local_agent_runner.py` and `local_repair_agent.py`: Local orchestration and repair experiments.
+ - `mock_agent.py` (For Validation Harness):Acts as a simulator that runs end-to-end completely to verify that all Guardrail scripts return predictable JSON Schema output and scalar penalties.
 
-  - **`pedagogue_check.py`(For Reasoning Trace Integrity):** This verifies the agent's diagnostic report contains structured graph relationships such as `CALLS`, `DEPENDS_ON` etc:- rather than ungrounded claims.
+#### Getting Started
+The setup and commands are being reconciles with current dependency list and script interfaces. Until that pass is complete, the scripts shall be treated as prototype and each script arguments and assumptions shall be inspected before running them.
 
-  - **`mock_agent.py` (For Validation Harness):** Acts as a simulator that runs end-to-end completely to verify that all Guardrail scripts return predictable JSON Schema output and scalar penalties.
+For prototyping, the local orchestration is using Ollama with Llama 3.2:3b. Gemma 4 model loading, training, adapter evaluation, and final deployment instructions will be documented after those workflows are verified.
 
-  - **`create_clean_testbed.py` (Reference Environment):** Generates isolated multi-module Python repos (`clean_repo/`) equipped with interdependent functions and struct unittest/pytest script suites.
-
-  - **`inject_bugs.py` (Synthetic Data Generator):** It simulates change or mutation in clean AST nodes (in the initial example, swapping comparion and arithmetic operators) to automatically produce a bug-fix curriculum pairs alongside NetworkX call graphs.
-
+#### License
