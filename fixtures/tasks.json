@@ -5,7 +5,7 @@
     {
       "task_id": "P0-01",
       "category": "single_function_repair",
-      "base_revision": "fixture:p0-01-v1",
+      "base_revision": "5031d40726db0404a06fab9808ef6bb699b86383",
       "issue": "Orders with a subtotal of exactly 100 must receive the 5% discount. Correct the discount rule if needed.",
       "target_hint": "src/discounts.py::discount_rate",
       "protected_paths": [
