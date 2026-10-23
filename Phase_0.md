@@ -273,25 +273,110 @@ The policy currently implemented:
 This serves as a clean, good reference
 
 #### Implementation Log and Milestone Status
-(I) Milestone 1: Environment and Clean Baseline
+**(I) Milestone 1: Environment and Clean Baseline**
  - Status: Verified for all the items in checklist below
  - Environment
    * Working directory: E:\Gemma_4_Agent\mock_python_repo
    * Python 3.11.5
    * OS: Windows (win32)
    * Test Runner: pytest 8.4.2 in the mock repo's .venv
- -  Verified Checklist
+**Verified Checklist**
    - [Yes] Python Executes from the mock environment
    - [Yes] Discount specific suite: 7 passed in 0.10 seconds
    - [Yes] Full baseline suite: 16 passed in 0.08 seconds
    - [Yes] Public task manifest validates against JSON schema
    - [Yes] Discount policy and tested boundary behavior inspected
 
- - Not yet Verified:
+ **Not yet Verified:**
    - [] Independent Git history for the mock repository
    - [] Reproducible reset to a clean benchmark revision
    - [] Task-specific faulty revision
    - [] Acceptance tests that Detect defects
    - [] Exact-patch evaluation and structured run results
-  
-   
+
+**Evidence**
+   - Terminal output above
+   - Git repository
+   - git status --short --ignored reports mock_python_repo as ignored by the parent repository.
+
+**Interpretation**
+    - The clean mock repository passes its current baseline tests. This establishes a reference state, not agent repair performance or benchmakr readiness
+
+**(II) Milestone2: Reproducible Benchmark Baseline**
+Status: Verified
+ - [Done] Confirm the mock repository has no existing nested Git metadata.
+
+ - [Done] Initialize an independent Git repository without modifying the parent repository's tracking configuration.
+
+ - [Done] Commit the clean mock repository as a named baseline revision.
+
+ - [Done] Verify the baseline commit passes all tests.
+
+ - [Done] Record the baseline commit hash and test output.
+**Limitations:** The commit establishes a clean reference state but not that repair evaluation works. Yet to implement task-specific fault revisions, reset orchestration with test scripts, hidden-test execution, patch evaluation etc:-
+
+Introducting a controlled defect by changing the comparison operator.
+
+First, a baseline backup was created before mutating the source file using:
+```
+Copy-Item .\src\discounts.py .\discounts.py.baseline-backup 
+```
+You can change the condition manually or use:
+```
+(Get-Content .\src\discounts.py -Raw).Replace( 'if subtotal<100:', 'if subtotal<=100:') | Set-Content .\src\discounts.py -NoNewline
+```
+
+**(III) Milestone 3: P0-01 Boundary-Defect Fixture** 
+Observation:
+```python -m pytest .\tests\test_discounts.py -v
+======================== test session starts ========================
+platform win32 -- Python 3.11.5, pytest-8.4.2, pluggy-1.7.0 -- E:\Gemma_4_Agent\mock_python_repo\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: E:\Gemma_4_Agent\mock_python_repo
+configfile: pytest.ini
+collected 7 items                                                    
+
+tests/test_discounts.py::test_discount_rate_boundaries[0-0.0] PASSED [ 14%]
+tests/test_discounts.py::test_discount_rate_boundaries[99.99-0.0] PASSED [ 28%]
+tests/test_discounts.py::test_discount_rate_boundaries[100-0.05] FAILED [ 42%]
+tests/test_discounts.py::test_discount_rate_boundaries[499.99-0.05] PASSED [ 57%]
+tests/test_discounts.py::test_discount_rate_boundaries[500-0.1] PASSED [ 71%]
+tests/test_discounts.py::test_discount_rate_boundaries[750-0.1] PASSED [ 85%]
+tests/test_discounts.py::test_discounted_total FAILED          [100%]
+
+============================= FAILURES ==============================
+______________ test_discount_rate_boundaries[100-0.05] ______________
+
+subtotal = 100, expected = 0.05
+
+    @pytest.mark.parametrize(("subtotal", "expected"), [(0,0.0),(99.99,0.0),(100,0.05),(499.99,0.05),(500,0.10),(750,0.10)])
+    def test_discount_rate_boundaries(subtotal, expected):
+>       assert discount_rate(subtotal) == expected
+E       assert 0.0 == 0.05
+E        +  where 0.0 = discount_rate(100)
+
+tests\test_discounts.py:6: AssertionError
+_______________________ test_discounted_total _______________________
+
+    def test_discounted_total():
+>       assert discounted_total(100.0) == 95.0
+E       assert 100.0 == 95.0
+E        +  where 100.0 = discounted_total(100.0)
+
+tests\test_discounts.py:9: AssertionError
+====================== short test summary info ======================
+FAILED tests/test_discounts.py::test_discount_rate_boundaries[100-0.05] - assert 0.0 == 0.05
+FAILED tests/test_discounts.py::test_discounted_total - assert 100.0 == 95.0
+==================== 2 failed, 5 passed in 0.18s =================
+```
+
+Status: Verified
+  - [Done] Create a task-specific faulty revision from the clean baseline.
+
+  - [Done] Verify the intended acceptance test fails on the faulty revision.
+
+  - [Done] Verify the clean baseline passes that test.
+
+  - [Done] Verify unrelated baseline tests remain understood and accounted for.
+
+  - [Done] Record the exact faulty revision, test command, and observed outcomes. 
