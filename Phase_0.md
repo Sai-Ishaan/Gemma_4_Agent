@@ -183,15 +183,15 @@ failures interpretable and comparisons reproducible before the system
 becomes more complex.
 
 #### Phase 0 Implementation Checklist
-[Done!] Define the manifest schema and stable task IDs.
-[Done!] Create the mock Python repository and its initial passing tests.
-[ ] Record a clean starting revision for every benchmark task.
-[ ] Implement evaluator checks for patch applicability, syntax, tests, regressions, and protected paths.
-[ ] Verify that the evaluator checks the exact code that was executed.
-[ ] Produce one machine-readable result for both successful and failed runs.
+- [Done!] Define the manifest schema and stable task IDs.
+- [Done!] Create the mock Python repository and its initial passing tests.
+- [ ] Record a clean starting revision for every benchmark task.
+- [ ] Implement evaluator checks for patch applicability, syntax, tests, regressions, and protected paths.
+- [ ] Verify that the evaluator checks the exact code that was executed.
+- [ ] Produce one machine-readable result for both successful and failed runs.
 
 #### Observations after Running Mock Repository:
-`python -m pytest -v
+```python -m pytest -v
 ======================== test session starts ========================
 platform win32 -- Python 3.11.5, pytest-8.4.2, pluggy-1.7.0 -- E:\Gemma_4_Agent\mock_python_repo\.venv\Scripts\python.exe
 cachedir: .pytest_cache
@@ -247,5 +247,5 @@ def discount_rate(subtotal: float)->float:
 
 def discounted_total(subtotal: float)-> float:
     return round(subtotal * (1.0 -discount_rate(subtotal)), 2)
-`
+```
 
