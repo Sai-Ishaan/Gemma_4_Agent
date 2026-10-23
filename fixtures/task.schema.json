@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GemmaGuard Phase 0 public task manifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "benchmark_id",
+    "tasks"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "benchmark_id": {
+      "const": "gemmaguard-phase0"
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "task_id",
+          "category",
+          "base_revision",
+          "issue",
+          "target_hint",
+          "protected_paths",
+          "test_command",
+          "acceptance_check_ids"
+        ],
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "pattern": "^P0-[0-9]{2}$"
+          },
+          "category": {
+            "enum": [
+              "single_function_repair",
+              "logic_repair",
+              "feature_development",
+              "direct_dependency",
+              "bounded_multihop_retrieval",
+              "scope_enforcement",
+              "misleading_context",
+              "regression_prevention",
+              "ambiguous_requirements",
+              "out_of_scope"
+            ]
+          },
+          "base_revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "issue": {
+            "type": "string",
+            "minLength": 1
+          },
+          "target_hint": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "protected_paths": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string"
+            }
+          },
+          "test_command": {
+            "type": "string",
+            "minLength": 1
+          },
+          "acceptance_check_ids": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$"
+            }
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
