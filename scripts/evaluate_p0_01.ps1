@@ -261,7 +261,7 @@ try {
 
     if (
         $fullBaseline.exit_code -eq 0 -or
-        $fullBaseline.output -notmatch "2 failed, 14 passed"
+        $fullBaseline.output -notmatch "3 failed, 13 passed"
     ) {
         throw "Full-suite baseline signature mismatch. Candidate patch was not applied."
     }
