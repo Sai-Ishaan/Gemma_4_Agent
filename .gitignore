@@ -7,7 +7,7 @@ __pycache__/
 mock_python_repo\.venv
 
 candidate_p0_01*
-E:\Gemma_4_Agent\p0-01-patch-authoring
+/p0-01-patch-authoring/
 
 # Python virtual environments
 .venv/
@@ -30,13 +30,6 @@ htmlcov/
 .env
 .env.*
 !.env.example
-
-# Logs and temporary files
-*.log
-*.tmp
-*.swp
-.DS_Store
-Thumbs.db
 
 # Local evaluation worktrees / experimental workspaces
 p0-01-evaluation/
