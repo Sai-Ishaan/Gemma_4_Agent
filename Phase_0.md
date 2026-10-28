@@ -1,7 +1,10 @@
 ### Phase 0: Mock Repository Evaluation Specification
 - What is it: An evaluation-design phase.
 
-- Purpose: To establish a compact, deterministic evaluation contract befotre expanding the guardrails, graph retrieval, synthetic data generation or model training.
+- Purpose: 
+   *To establish a compact, deterministic evaluation contract before expanding the guardrails, graph retrieval, synthetic data generation or model training. 
+   * To make sure the policies work before moving to the actual model training and finetuning.
+   * Before moving to applying reliable guardrails into agent execution, we must know the defects, deterministic test results to see where agent can 'make-or-break'. Hence, It is essential to have machine-readable run-records
 
 - Status: Proposed Specifications ; Implementation and Measurements Pending.
 
@@ -164,20 +167,20 @@ Once the agent is able to complete the local worflow reliably and efficiently, w
 
 #### Phase 0 exit criteria
 Phase 0 is ready to close when:
-- [ ] The mock repository can be restored deterministically for every
+- [Yes] The mock repository can be restored deterministically for every
   task.
-- [ ] The initial task manifest has stable IDs and objective
+- [Yes] The initial task manifest has stable IDs and objective
   acceptance checks.
-- [ ] In-scope, out-of-scope, ambiguous, dependency,
+- [Yes] In-scope, out-of-scope, ambiguous, dependency,
   misleading-context, and regression scenarios are represented.
-- [ ] The evaluator checks the exact patch that is applied.
-- [ ] Hard constraints are reported separately from graded metrics.
-- [ ] A target-only baseline can run end to end and produce structured
+- [Yes] The evaluator checks the exact patch that is applied.
+- [Yes] Hard constraints are reported separately from graded metrics.
+- [Yes] A target-only baseline can run end to end and produce structured
   results.
-- [ ] Results include failed and incomplete runs, context/tool costs,
+- [Yes] Results include failed and incomplete runs, context/tool costs,
   and test outcomes.
-- [ ] Training examples and held-out evaluation tasks are separated.
-- [ ] Known limitations and any unimplemented checks are documented.
+- [Yes] Training examples and held-out evaluation tasks are separated.
+- [Yes] Known limitations and any unimplemented checks are documented.
 Phase 0 does not require high repair accuracy. Its purpose is to make
 failures interpretable and comparisons reproducible before the system
 becomes more complex.
@@ -185,12 +188,11 @@ becomes more complex.
 #### Phase 0 Implementation Checklist
 - [Done!] Define the manifest schema and stable task IDs.
 - [Done!] Create the mock Python repository and its initial passing tests.
-- [ ] Record a clean starting revision for every benchmark task.
-- [ ] Implement evaluator checks for patch applicability, syntax, tests, regressions, and protected paths.
-- [ ] Verify that the evaluator checks the exact code that was executed.
-- [ ] Produce one machine-readable result for both successful and failed runs.
+- [Done!] Record a clean starting revision for every benchmark task.
+- [Done!] Implement evaluator checks for patch applicability, syntax, tests, regressions, and protected paths.
+- [Done!] Verify that the evaluator checks the exact code that was executed.
+- [Done!] Produce one machine-readable result for both successful and failed runs.
 
-#### Mock Repository at hand: 
 #### Observations after Running Mock Repository:
 ```python -m pytest -v
 ======================== test session starts ========================
@@ -274,8 +276,8 @@ This serves as a clean, good reference
 
 #### Implementation Log and Milestone Status
 **(I) Milestone 1: Environment and Clean Baseline**
- - Status: Verified for all the items in checklist below
- - Environment
+ - **Status**: Verified for all the items in checklist below
+ - **Environment**
    * Working directory: E:\Gemma_4_Agent\mock_python_repo
    * Python 3.11.5
    * OS: Windows (win32)
@@ -286,13 +288,12 @@ This serves as a clean, good reference
    - [Yes] Full baseline suite: 16 passed in 0.08 seconds
    - [Yes] Public task manifest validates against JSON schema
    - [Yes] Discount policy and tested boundary behavior inspected
-
- **Not yet Verified:**
-   - [] Independent Git history for the mock repository
-   - [] Reproducible reset to a clean benchmark revision
-   - [] Task-specific faulty revision
-   - [] Acceptance tests that Detect defects
-   - [] Exact-patch evaluation and structured run results
+   - [Yes] Independent Git history for the mock repository
+   - [Yes] Reproducible reset to a clean benchmark revision
+   - [Yes] Task-specific faulty revision
+   - [Yes] Acceptance tests that Detect defects
+   - [Yes] Exact-patch evaluation and structured run results
+   - [Yes] Write a JSON run record after failure
 
 **Evidence**
    - Terminal output above
@@ -303,7 +304,8 @@ This serves as a clean, good reference
     - The clean mock repository passes its current baseline tests. This establishes a reference state, not agent repair performance or benchmakr readiness
 
 **(II) Milestone2: Reproducible Benchmark Baseline**
-Status: Verified
+
+**Status**: Verified
  - [Done] Confirm the mock repository has no existing nested Git metadata.
 
  - [Done] Initialize an independent Git repository without modifying the parent repository's tracking configuration.
@@ -327,7 +329,9 @@ You can change the condition manually or use:
 ```
 
 **(III) Milestone 3: P0-01 Boundary-Defect Fixture** 
-Observation:
+
+**Status**: Verified
+**Observation**:
 ```python -m pytest .\tests\test_discounts.py -v
 ======================== test session starts ========================
 platform win32 -- Python 3.11.5, pytest-8.4.2, pluggy-1.7.0 -- E:\Gemma_4_Agent\mock_python_repo\.venv\Scripts\python.exe
@@ -380,3 +384,139 @@ Status: Verified
   - [Done] Verify unrelated baseline tests remain understood and accounted for.
 
   - [Done] Record the exact faulty revision, test command, and observed outcomes. 
+
+**(IV) Milestone 4: Reproducibility Check**
+- **Target Design**:
+  [Clean_Baseline] ----(Apply one deliberate mutation)--->[Faulty_P0-01_revision(Expected_failure)]-----(Switch back to clean version)--->[Reset_Verification(Source_Restored_And_Tests_Passed)]
+
+- **Status** : Verified Initial test-oracle check
+- **Mutation**: Changed the first condition in src/discounts.py from subtotal < 100 to subtotal <=100
+- **Restoration**: Restored src/discounts.py from the pre-mutation backup
+
+- **Experiment**:
+ * Run the following commands:
+
+```git status --short
+   git diff -- .\src\discounts.py
+   git diff --check 
+```
+
+- **Observation**:
+ * The first command gave `?? discounts.py.baseline-backup`, which means only the temporary backup is untracked.
+ * The second and third ones gave no output. Which can be concluded that the tracked source matches the committed baseline, and that there were no whitespace errors detected while checking diff.
+ * The original source has been restored, while the backup remains untracked.
+ * After restoration, all test suites passed. No errors nor changes were detected.
+
+**(V) Milestone 5: Invalid Patch Rejection and Negative Path Validation**
+- **Approach**: Using a set of PowerShell scripts to see if a faulty patch is being accepted and committed.
+- **Experiment**:
+    * Run the PowerShell script against the src file:
+     ``` Eg:- git -C "\Gemma_4_Agent\p0-01-evaluation" restore -- src/discounts.py
+     ```
+    ```
+    git -C "E:\Gemma_4_Agent\p0-01-evaluation" status --short
+    ``` 
+
+    * If nothing showed up it means that the work tree is clean and the previous candidate repair won't be contaminating the next experiment. Once comfirmed move to the next set of evaluations:
+
+``` 
+"$invalidPatch = "\Gemma_4_Agent\candidate_p0_01_invalid.patch"
+
+@'
+diff --git a/src/discounts.py b/src/discounts.py
+--- a/src/discounts.py
++++ b/src/discounts.py
+@@ -999,3 +999,3 @@
+-THIS_LINE_DOES_NOT_EXIST
++THIS_LINE_STILL_DOES_NOT_EXIST
+'@ | Set-Content -LiteralPath $invalidPatch -Encoding ascii
+Get-Content $invalidPatch"
+```
+    
+  * The above patch references a non-existent line, designated to be rejected rather than repair the defect. Once done, run the evaluator against the invalid patch:
+  
+  ```.\scripts\evaluate_p0_01.ps1 -PatchPath "\Gemma_4_Agent\candidate_p0_01_invalid.patch"```
+
+  * An invalid patch was defined, which, unlike other patches, has a consistent one-line hunk. Though it might be parseable, the original line won't match the first line of the src file. (in this case, src/discounts.py)
+  
+**Observation:**
+  - The evaluator stopped and recorded the invalid patch withour accepting. 
+  - The evaluation is recorded in JSON format.
+  - No source modification was left behing since worktree status was empty afterwards.
+  -Failed attempt doesn't leave candidate source changes in the eval worktree
+
+**(VI) Milestone 6: Testing Protected-Path Enforcement**
+  - Purpose: To verify that passing tests alone cannot override the scope policy and ensure the evaluator rejects attempted modifications in protected test files and paths.
+
+  - **Procedure**:
+       * First, we establish a Baseline worktree state: Reset the evaluation worktree to the known faulty base commit using safe reset harness
+       * A candidate patch is generated, which can include the correct line source repair in the component at hand, while making an unpermitted change at the same time to a protect path. (tests)
+       * The evaluation script is executed against the protected path candidate patch
+       * The generated run record is stored in JSON format under `runs/` directory. Helps us check the worktree git status to confirm clean slate and containment.
+       * Using command lines, unauthorised commits (harmless) are performed on the test scripts ony at the patch-authoring worktree, not the evaluation worktree. 
+
+
+**Observations so far:**
+  - A valid one-line boundary fix successfully passes all target and full-suite test assertions. The scope and files remain intact, and untouched
+
+  - The evaluator correctly detects corrupt syntaces and incompatible source line contexts, and that too without changing the worktree.
+
+  - Scope and Protected-path integrity remains and confirms that the deterministic evaluation approaches enforces policy boundaries irrespective of whether functional tests pass or not. This prevents reward hacking or rule tampering by the Generative Agents. 
+
+  - The diff confirms the real P0-01 repair and harmless comment in protected testfile
+
+  - Passing functional tests does not override the scope policy
+
+  - The negative path experiment tested with an in-scope patch and the evaluator rejected any patch with a defect in it.
+
+#### What is being demonstrated so far via Recorded Runs:
+  - A valid, in-scope patch can be accepted.
+  - A patch that leaves a failing candidate test is rejected.
+  - A patch that changes a protected test file can be rejected even when the test passes.
+  - Baseline-signature mismatch and a dirty main repository can pause/stop evaluation
+  - Corrupt and non-applying patches can be rejected.
+
+#### What isn't Demonstrated yet:
+  - That The agent can reliably produce repairs; It can only establish an accepted patch, not necessarily autonomous agent success.
+
+  - The diagnostic quality is measured reprodcibly
+  - The evaluator outcomes are robust across multiple independent tests.
+
+**Conclusions:** 
+ - These existing tests are capable of detecting the injected boundary defect, including its effect on the overall result (eg:- discounted total). This would provide some insight into AI repair capability or task-fixtures, and which are the useful metrics to calculate how strong the guardrails are.
+
+ - Functional correctness and scope compliance are independent checks. Just because one passes the functional test, doesn't mean the evaluator won't reject an unauthorized change
+
+ - Baseline diagnostics require careful interpretation. 
+
+ - Fixing one defect isn't enough to establish correctness. Points out the necessity for regression tests to check near and above boundary conditions.
+
+ - Repair and Development require a separate set of benchmarks
+
+
+#### So what changes when Virtual Sandbox and Agent come into the picture?
+
+These current behaviors help us know the defects, intended boundary behavior, and expected tests in advance. This helps us understand the difference between a valid repair, bad repair and unauthorised repair.
+
+A Sandbx adds a controlled place to test the candidate changes and inspect them before moving to acceptance state. An Agent changes the problem because it must act on evidence as well as discover, rather than simply present a fix/patch.
+
+The flow can be broken down as follows:
+
+[Agent Receives Task, Scope allowed and Context. It might discover and delve into relevant functions, tests, interfaces and dependencies.]
+                                   |
+                                   v
+[Agent uses retrieved evidence to propose a change. To stop wasting time traversing an entire repository, Graph Retrieval can help explore relevant dependencies]
+                                   |
+                                   v
+[The candidate patch is applied to an isolated work-copy/controlled test environment and deterministic checks are run.]                    
+                                   |
+                                   v
+[Diagnostic feedback of the failures, successes, and relevant evidences to analyse if it needs further context or the current run is sufficient.]
+                                   |
+                                   v
+[The evaluator accepts/rejects the patch according to criteria, and records patches, tests, changed paths, diagnostics and output.]
+
+**Limitations:**
+ - A scheme limitation worth pointing out to is that the current schema checks only the shape of the tasks, but it doesn't necessarily require task_id's to be unique across tasks array. 
+ - It accepts any non-empty base revision string without checking it can identify an actual Git commit. 
+ - These gaps are within semantic and structural validation. 

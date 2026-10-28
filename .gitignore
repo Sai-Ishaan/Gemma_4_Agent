@@ -6,3 +6,5 @@ __pycache__/
 /sandbox_tdd_workspace/
 mock_python_repo\.venv
 mock_python_repo/
+candidate_p0_01*
+E:\Gemma_4_Agent\p0-01-patch-authoring

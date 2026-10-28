@@ -1,0 +1,13 @@
+﻿diff --git a/src/discounts.py b/src/discounts.py
+index d171114..e39ab97 100644
+--- a/src/discounts.py
++++ b/src/discounts.py
+@@ -1,7 +1,7 @@
+ ### Discount policy for Phase 0 Mock Repo
+ 
+ def discount_rate(subtotal: float)->float:
+-    if subtotal<=100:
++    if subtotal<100:
+         return 0.0 ## 0% below 100
+     if subtotal < 500:
+         return 0.05 ## 5% from 100 to <500
