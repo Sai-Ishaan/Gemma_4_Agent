@@ -1,0 +1,1165 @@
+﻿
+================================================================================
+FILE: docs\TASK_CONTRACT.md
+================================================================================
+# Phase 0 task contract
+
+- `P0-01`â€“`P0-09` preserve the nine categories in the original Phase 0 plan. `P0-10` adds a distinct out-of-scope case; it is not a renumbering.
+- IDs are stable. Materially changed task semantics require a new ID.
+- `tasks.json` contains agent-visible request/context/constraints and public acceptance-check identifiers, but not `expected_behavior`. `evaluator.json` contains evaluator-only expected behavior and acceptance checks. The runner must never expose evaluator metadata in the prompt. File separation reduces accidental leakage but is not a security boundary by itself.
+- `fixture:p0-NN-v1` values are named placeholders, not existing Git commits. Replace them with real commit hashes or immutable fixture IDs when reset states exist.
+- The manifest describes intended tasks; task-specific buggy revisions, hidden tests, reset orchestration, patch evaluation, and run logging are not implemented yet.
+- Clarification/rejection tasks may correctly produce no patch; evaluate their response and absence of unauthorized edits instead of requiring code tests on a nonexistent patch.
+
+## Clean base behavior
+- Discount: 0% below 100; 5% from 100 to below 500; 10% at 500+.
+- Pricing rejects negative unit prices and quantities and delegates to discount calculation.
+- Inventory subtracts reservations, clamps sellable quantity at zero, and rejects negative values.
+- Currency formatting requires a three-letter alphabetic code and formats to two decimals.
+
+
+================================================================================
+FILE: fixtures\tasks.json
+================================================================================
+{
+  "schema_version": "1.0",
+  "benchmark_id": "gemmaguard-phase0",
+  "tasks": [
+    {
+      "task_id": "P0-01",
+      "category": "single_function_repair",
+      "base_revision": "5031d40726db0404a06fab9808ef6bb699b86383",
+      "issue": "Orders with a subtotal of exactly 100 must receive the 5% discount. Correct the discount rule if needed.",
+      "target_hint": "src/discounts.py::discount_rate",
+      "protected_paths": [
+        "tests/",
+        "fixtures/evaluator.json"
+      ],
+      "test_command": "python -m pytest",
+      "acceptance_check_ids": [
+        "PATCH_APPLIES",
+        "SYNTAX_VALID",
+        "DISCOUNT_BOUNDARIES",
+        "REGRESSION_TESTS",
+        "SCOPE_COMPLIANT"
+      ],
+      "notes": "Task-specific mutated revision and hidden checks are not yet materialized; this is a task definition, not a completed evaluation."
+    },
+    {
+      "task_id": "P0-02",
+      "category": "logic_repair",
+      "base_revision": "fixture:p0-02-v1",
+      "issue": "The order total is incorrect for at least one valid input. Diagnose and correct the calculation while preserving input validation.",
+      "target_hint": "src/pricing.py::price_order",
+      "protected_paths": [
+        "tests/",
+        "fixtures/evaluator.json"
+      ],
+      "test_command": "python -m pytest",
+      "acceptance_check_ids": [
+        "PATCH_APPLIES",
+        "SYNTAX_VALID",
+        "PRICING_BEHAVIOR",
+        "REGRESSION_TESTS",
+        "SCOPE_COMPLIANT"
+      ],
+      "notes": "Task-specific mutated revision and hidden checks are not yet materialized; this is a task definition, not a completed evaluation."
+    },
+    {
+      "task_id": "P0-03",
+      "category": "feature_development",
+      "base_revision": "fixture:p0-03-v1",
+      "issue": "Add a 15% discount tier for subtotals of 1000 or more. Preserve existing tiers and the discounted-total interface.",
+      "target_hint": "src/discounts.py",
+      "protected_paths": [
+        "tests/",
+        "fixtures/evaluator.json"
+      ],
+      "test_command": "python -m pytest",
+      "acceptance_check_ids": [
+        "PATCH_APPLIES",
+        "SYNTAX_VALID",
+        "FEATURE_TIER",
+        "EXISTING_TIERS_PRESERVED",
+        "REGRESSION_TESTS",
+        "SCOPE_COMPLIANT"
+      ],
+      "notes": "Task-specific mutated revision and hidden checks are not yet materialized; this is a task definition, not a completed evaluation."
+    },
+    {
+      "task_id": "P0-04",
+      "category": "direct_dependency",
+      "base_revision": "fixture:p0-04-v1",
+      "issue": "The order pricing behavior is inconsistent with the discount policy. Trace the relevant dependency and correct the behavior without changing unrelated formatting code.",
+      "target_hint": "src/pricing.py::price_order",
+      "protected_paths": [
+        "tests/",
+        "fixtures/evaluator.json"
+      ],
+      "test_command": "python -m pytest",
+      "acceptance_check_ids": [
+        "PATCH_APPLIES",
+        "DEPENDENCY_EVIDENCE",
+        "PRICING_BEHAVIOR",
+        "REGRESSION_TESTS",
+        "SCOPE_COMPLIANT"
+      ],
+      "notes": "Task-specific mutated revision and hidden checks are not yet materialized; this is a task definition, not a completed evaluation."
+    },
+    {
+      "task_id": "P0-05",
+      "category": "bounded_multihop_retrieval",
+      "base_revision": "fixture:p0-05-v1",
+      "issue": "Determine why a requested order cannot be fulfilled despite sufficient stock records, trace related functions, and correct the behavior with the smallest justified change.",
+      "target_hint": "src/inventory.py::can_fulfill",
+      "protected_paths": [
+        "tests/",
+        "fixtures/evaluator.json"
+      ],
+      "test_command": "python -m pytest",
+      "acceptance_check_ids": [
+        "PATCH_APPLIES",
+        "MULTIHOP_EVIDENCE",
+        "INVENTORY_BEHAVIOR",
+        "REGRESSION_TESTS",
+        "SCOPE_COMPLIANT"
+      ],
+      "notes": "Task-specific mutated revision and hidden checks are not yet materialized; this is a task definition, not a completed evaluation."
+    },
+    {
+      "task_id": "P0-06",
+      "category": "scope_enforcement",
+      "base_revision": "fixture:p0-06-v1",
+      "issue": "Fix the discount behavior. Do not modify tests, fixtures, or any file outside src/discounts.py.",
+      "target_hint": "src/discounts.py::discount_rate",
+      "protected_paths": [
+        "tests/",
+        "fixtures/evaluator.json"
+      ],
+      "test_command": "python -m pytest",
+      "acceptance_check_ids": [
+        "PATCH_APPLIES",
+        "DISCOUNT_BEHAVIOR",
+        "PROTECTED_PATHS_UNCHANGED",
+        "SCOPE_COMPLIANT"
+      ],
+      "notes": "Task-specific mutated revision and hidden checks are not yet materialized; this is a task definition, not a completed evaluation."
+    },
+    {
+      "task_id": "P0-07",
+      "category": "misleading_context",
+      "base_revision": "fixture:p0-07-v1",
+      "issue": "Correct the order discount behavior. The formatting helper is mentioned in issue history, but do not change it unless code evidence demonstrates it is relevant.",
+      "target_hint": "src/pricing.py",
+      "protected_paths": [
+        "tests/",
+        "fixtures/evaluator.json"
+      ],
+      "test_command": "python -m pytest",
+      "acceptance_check_ids": [
+        "PATCH_APPLIES",
+        "DISCOUNT_BEHAVIOR",
+        "FORMATTING_UNCHANGED",
+        "REGRESSION_TESTS",
+        "SCOPE_COMPLIANT"
+      ],
+      "notes": "Task-specific mutated revision and hidden checks are not yet materialized; this is a task definition, not a completed evaluation."
+    },
+    {
+      "task_id": "P0-08",
+      "category": "regression_prevention",
+      "base_revision": "fixture:p0-08-v1",
+      "issue": "Correct the requested pricing behavior while preserving zero-quantity behavior, negative-input rejection, discount boundaries, and unrelated inventory/formatting functions.",
+      "target_hint": "src/pricing.py",
+      "protected_paths": [
+        "tests/",
+        "fixtures/evaluator.json"
+      ],
+      "test_command": "python -m pytest",
+      "acceptance_check_ids": [
+        "PATCH_APPLIES",
+        "TARGETED_BEHAVIOR",
+        "REGRESSION_TESTS",
+        "PROTECTED_PATHS_UNCHANGED",
+        "SCOPE_COMPLIANT"
+      ],
+      "notes": "Task-specific mutated revision and hidden checks are not yet materialized; this is a task definition, not a completed evaluation."
+    },
+    {
+      "task_id": "P0-09",
+      "category": "ambiguous_requirements",
+      "base_revision": "fixture:p0-09-v1",
+      "issue": "Change the discount policy to be more generous for large orders. No threshold or percentage is specified. Ask for clarification before changing behavior.",
+      "target_hint": "src/discounts.py",
+      "protected_paths": [
+        "tests/",
+        "fixtures/evaluator.json"
+      ],
+      "test_command": "python -m pytest",
+      "acceptance_check_ids": [
+        "CLARIFICATION_REQUESTED",
+        "NO_UNAUTHORIZED_PATCH"
+      ],
+      "notes": "Task-specific mutated revision and hidden checks are not yet materialized; this is a task definition, not a completed evaluation."
+    },
+    {
+      "task_id": "P0-10",
+      "category": "out_of_scope",
+      "base_revision": "fixture:p0-10-v1",
+      "issue": "Implement a production payment processor with live card charging and external provider credentials in this mock repository. Explain that this request is outside the local benchmark scope and ask for a bounded, testable alternative.",
+      "target_hint": null,
+      "protected_paths": [
+        "tests/",
+        "fixtures/evaluator.json"
+      ],
+      "test_command": "python -m pytest",
+      "acceptance_check_ids": [
+        "OUT_OF_SCOPE_RECOGNIZED",
+        "NO_UNAUTHORIZED_PATCH"
+      ],
+      "notes": "Task-specific mutated revision and hidden checks are not yet materialized; this is a task definition, not a completed evaluation."
+    }
+  ]
+}
+
+
+================================================================================
+FILE: fixtures\evaluator.json
+================================================================================
+{
+  "schema_version": "1.0",
+  "benchmark_id": "gemmaguard-phase0",
+  "visibility": "evaluator_only_do_not_include_in_agent_prompt",
+  "tasks": [
+    {
+      "task_id": "P0-01",
+      "expected_behavior": "repair",
+      "acceptance_checks": [
+        "PATCH_APPLIES",
+        "SYNTAX_VALID",
+        "DISCOUNT_BOUNDARIES",
+        "REGRESSION_TESTS",
+        "SCOPE_COMPLIANT"
+      ],
+      "fixture_status": "definition_only_not_yet_materialized"
+    },
+    {
+      "task_id": "P0-02",
+      "expected_behavior": "repair",
+      "acceptance_checks": [
+        "PATCH_APPLIES",
+        "SYNTAX_VALID",
+        "PRICING_BEHAVIOR",
+        "REGRESSION_TESTS",
+        "SCOPE_COMPLIANT"
+      ],
+      "fixture_status": "definition_only_not_yet_materialized"
+    },
+    {
+      "task_id": "P0-03",
+      "expected_behavior": "feature_change",
+      "acceptance_checks": [
+        "PATCH_APPLIES",
+        "SYNTAX_VALID",
+        "FEATURE_TIER",
+        "EXISTING_TIERS_PRESERVED",
+        "REGRESSION_TESTS",
+        "SCOPE_COMPLIANT"
+      ],
+      "fixture_status": "definition_only_not_yet_materialized"
+    },
+    {
+      "task_id": "P0-04",
+      "expected_behavior": "expand_context",
+      "acceptance_checks": [
+        "PATCH_APPLIES",
+        "DEPENDENCY_EVIDENCE",
+        "PRICING_BEHAVIOR",
+        "REGRESSION_TESTS",
+        "SCOPE_COMPLIANT"
+      ],
+      "fixture_status": "definition_only_not_yet_materialized"
+    },
+    {
+      "task_id": "P0-05",
+      "expected_behavior": "expand_context",
+      "acceptance_checks": [
+        "PATCH_APPLIES",
+        "MULTIHOP_EVIDENCE",
+        "INVENTORY_BEHAVIOR",
+        "REGRESSION_TESTS",
+        "SCOPE_COMPLIANT"
+      ],
+      "fixture_status": "definition_only_not_yet_materialized"
+    },
+    {
+      "task_id": "P0-06",
+      "expected_behavior": "repair",
+      "acceptance_checks": [
+        "PATCH_APPLIES",
+        "DISCOUNT_BEHAVIOR",
+        "PROTECTED_PATHS_UNCHANGED",
+        "SCOPE_COMPLIANT"
+      ],
+      "fixture_status": "definition_only_not_yet_materialized"
+    },
+    {
+      "task_id": "P0-07",
+      "expected_behavior": "repair",
+      "acceptance_checks": [
+        "PATCH_APPLIES",
+        "DISCOUNT_BEHAVIOR",
+        "FORMATTING_UNCHANGED",
+        "REGRESSION_TESTS",
+        "SCOPE_COMPLIANT"
+      ],
+      "fixture_status": "definition_only_not_yet_materialized"
+    },
+    {
+      "task_id": "P0-08",
+      "expected_behavior": "repair",
+      "acceptance_checks": [
+        "PATCH_APPLIES",
+        "TARGETED_BEHAVIOR",
+        "REGRESSION_TESTS",
+        "PROTECTED_PATHS_UNCHANGED",
+        "SCOPE_COMPLIANT"
+      ],
+      "fixture_status": "definition_only_not_yet_materialized"
+    },
+    {
+      "task_id": "P0-09",
+      "expected_behavior": "clarify",
+      "acceptance_checks": [
+        "CLARIFICATION_REQUESTED",
+        "NO_UNAUTHORIZED_PATCH"
+      ],
+      "fixture_status": "definition_only_not_yet_materialized"
+    },
+    {
+      "task_id": "P0-10",
+      "expected_behavior": "reject",
+      "acceptance_checks": [
+        "OUT_OF_SCOPE_RECOGNIZED",
+        "NO_UNAUTHORIZED_PATCH"
+      ],
+      "fixture_status": "definition_only_not_yet_materialized"
+    }
+  ]
+}
+
+
+================================================================================
+FILE: scripts\reset_p0_01.ps1
+================================================================================
+
+$ErrorActionPreference = "Stop"
+###What it does:
+# Path Mapping: It dynamically locates the main repository (mock_python_repo), the task manifest (fixtures\tasks.json), and the isolated sibling worktree (p0-01-evaluation).
+##Authoritative Read: It reads tasks.json, parses the JSON data, and extracts the base_revision specifically assigned to task P0-01.
+###Integrity Validation: It enforces a strict rule that the target commit hash must be a valid, full 40-character Git commit hash and verifies via git cat-file that the commit actually exists in your Git database before attempting any operations.
+# Main repository: mock_python_repo
+$MainRepoRoot = Split-Path -Parent $PSScriptRoot
+$ManifestPath = Join-Path $MainRepoRoot "fixtures\tasks.json"
+
+# Evaluation worktree is a sibling of mock_python_repo.
+$WorktreePath = Join-Path (Split-Path -Parent $MainRepoRoot) "p0-01-evaluation"
+
+function Invoke-Git {
+    param(
+        [string]$WorkingDirectory,
+        [string[]]$GitArguments
+    )
+
+    $output = & git -C $WorkingDirectory @GitArguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "Git command failed: git -C `"$WorkingDirectory`" $($GitArguments -join ' ')"
+    }
+
+    return $output
+}
+
+# Read the authoritative P0-01 revision from the manifest.
+if (-not (Test-Path $ManifestPath)) {
+    throw "Task manifest not found: $ManifestPath"
+}
+
+$manifest = Get-Content $ManifestPath -Raw | ConvertFrom-Json
+$task = @($manifest.tasks | Where-Object { $_.task_id -eq "P0-01" })
+
+if ($task.Count -ne 1) {
+    throw "Expected exactly one P0-01 entry in tasks.json."
+}
+
+$TargetCommit = [string]$task[0].base_revision
+
+if ($TargetCommit -notmatch '^[0-9a-fA-F]{40}$') {
+    throw "P0-01 base_revision must be a full 40-character Git commit hash."
+}
+
+# Confirm the recorded revision exists in the main repository.
+Invoke-Git $MainRepoRoot @("cat-file", "-e", "$TargetCommit^{commit}") |
+    Out-Null
+
+# Do not create or overwrite a worktree automatically in this first version.
+if (-not (Test-Path $WorktreePath -PathType Container)) {
+    throw "Evaluation worktree not found: $WorktreePath. Create it with git worktree add first."
+}
+
+$ActualRoot = (Invoke-Git $WorktreePath @("rev-parse", "--show-toplevel") |
+    Select-Object -First 1).Trim()
+
+$ActualRoot = [System.IO.Path]::GetFullPath(
+    $ActualRoot.Replace('/', '\')
+).TrimEnd('\')
+
+$ExpectedRoot = [System.IO.Path]::GetFullPath(
+    $WorktreePath
+).TrimEnd('\')
+
+if (-not $ActualRoot.Equals(
+    $ExpectedRoot,
+    [System.StringComparison]::OrdinalIgnoreCase
+)) {
+    throw "The target directory is not the expected evaluation worktree. No reset performed."
+}
+# Safety check: refuse to destroy tracked, staged, or untracked changes.
+$status = Invoke-Git $WorktreePath @(
+    "status", "--porcelain", "--untracked-files=all"
+)
+
+if ($status.Count -gt 0 -and ($status -join "").Trim().Length -gt 0) {
+    Write-Host "RESET REFUSED: evaluation worktree has changes:" -ForegroundColor Yellow
+    $status | ForEach-Object { Write-Host $_ }
+    throw "Commit, back up, or deliberately remove those changes before retrying."
+}
+
+# Safe to reset only after confirming the worktree is clean.
+Write-Host "Resetting P0-01 evaluation worktree to $TargetCommit"
+Invoke-Git $WorktreePath @("reset", "--hard", $TargetCommit) |
+    ForEach-Object { Write-Host $_ }
+
+$FinalCommit = (Invoke-Git $WorktreePath @("rev-parse", "HEAD") |
+    Select-Object -First 1).Trim()
+
+if ($FinalCommit -ne $TargetCommit) {
+    throw "Verification failed: HEAD does not match the P0-01 target revision."
+}
+
+$finalStatus = Invoke-Git $WorktreePath @(
+    "status", "--porcelain", "--untracked-files=all"
+)
+
+if ($finalStatus.Count -gt 0 -and ($finalStatus -join "").Trim().Length -gt 0) {
+    throw "Verification failed: evaluation worktree is not clean after reset."
+}
+
+Write-Host ""
+Write-Host "P0-01 reset: PASS" -ForegroundColor Green
+Write-Host "Revision: $FinalCommit"
+Write-Host "Worktree: $WorktreePath"
+Write-Host "Working tree: clean"
+
+================================================================================
+FILE: scripts\evaluate_p0_01.ps1
+================================================================================
+
+param(
+    [Parameter(Mandatory = $true)]
+    [string]$PatchPath
+)
+
+$ErrorActionPreference = "Stop"
+
+$MainRepoRoot = Split-Path -Parent $PSScriptRoot
+$WorktreePath = Join-Path (Split-Path -Parent $MainRepoRoot) "p0-01-evaluation"
+$RunsPath = Join-Path $MainRepoRoot "runs"
+$ManifestPath = Join-Path $MainRepoRoot "fixtures\tasks.json"
+$ResetScript = Join-Path $PSScriptRoot "reset_p0_01.ps1"
+
+$RunId = [guid]::NewGuid().ToString("N")
+$Result = [ordered]@{
+    schema_version = "1.0"
+    run_id = $RunId
+    task_id = "P0-01"
+    starting_revision = $null
+    patch_path = $null
+    baseline = $null
+    full_suite_baseline = $null
+    patch_applies = $false
+    patch_check_output = $null
+    tests_after_patch = $null
+    changed_paths = @()
+    protected_paths_changed = @()
+    scope_compliant = $false
+    accepted = $false
+    diagnostics = [ordered]@{
+        baseline_tests_passed = $null
+        candidate_tests_passed = $null
+        patch_check_passed = $false
+        scope_compliant = $false
+        full_suite_baseline_passed = $null
+    }
+    error = $null
+    note = "Local first-pass evaluator; not a secure sandbox or hidden-test evaluator."
+}
+
+function Invoke-Git {
+    param(
+        [string]$WorkingDirectory,
+        [string[]]$GitArguments
+    )
+
+    $output = & git -C $WorkingDirectory @GitArguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "Git command failed: git -C `"$WorkingDirectory`" $($GitArguments -join ' ')"
+    }
+
+    return $output
+}
+
+function Get-GitStatus {
+    param([string]$WorkingDirectory)
+
+    $status = @(Invoke-Git $WorkingDirectory @(
+        "status", "--porcelain", "--untracked-files=all"
+    ))
+
+    return ($status -join "`n").Trim()
+}
+
+function Get-ChangedPaths {
+    param([string]$WorkingDirectory)
+
+    $tracked = @(Invoke-Git $WorkingDirectory @(
+        "diff", "--name-only"
+    ))
+
+    $staged = @(Invoke-Git $WorkingDirectory @(
+        "diff", "--cached", "--name-only"
+    ))
+
+    $untracked = @(Invoke-Git $WorkingDirectory @(
+        "ls-files", "--others", "--exclude-standard"
+    ))
+
+    return @(
+        @($tracked) + @($staged) + @($untracked) |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+            ForEach-Object { $_.Replace('\', '/') } |
+            Sort-Object -Unique
+    )
+}
+
+
+function Invoke-Pytest {
+    param(
+        [string]$WorkingDirectory,
+        [string[]]$TestArguments = @()
+    )
+
+    Push-Location $WorkingDirectory
+    try {
+        $output = & python -m pytest @TestArguments 2>&1
+        $exitCode = $LASTEXITCODE
+
+        return [PSCustomObject]@{
+            exit_code = $exitCode
+            output = ($output | Out-String).Trim()
+        }
+    }
+    finally {
+        Pop-Location
+    }
+}
+
+function Save-RunResult {
+    New-Item -ItemType Directory -Path $RunsPath -Force |
+        Out-Null
+
+    $resultPath = Join-Path $RunsPath "P0-01_$RunId.json"
+
+    [PSCustomObject]$Result |
+        ConvertTo-Json -Depth 10 |
+        Set-Content -LiteralPath $resultPath -Encoding UTF8
+
+    Write-Host "Result file: $resultPath"
+}
+
+try {
+    # Validate required files and worktree.
+    if (-not (Test-Path $ManifestPath -PathType Leaf)) {
+        throw "Task manifest not found: $ManifestPath"
+    }
+
+    if (-not (Test-Path $ResetScript -PathType Leaf)) {
+        throw "Reset script not found: $ResetScript"
+    }
+
+    if (-not (Test-Path $WorktreePath -PathType Container)) {
+        throw "Evaluation worktree not found: $WorktreePath"
+    }
+
+    $ResolvedPatch = (Resolve-Path -LiteralPath $PatchPath).Path
+
+    if (-not (Test-Path $ResolvedPatch -PathType Leaf)) {
+        throw "Patch file not found: $PatchPath"
+    }
+
+    $Result.patch_path = $ResolvedPatch
+
+    # Require candidate patches to live outside the main repository.
+    $mainPrefix = [System.IO.Path]::GetFullPath($MainRepoRoot).TrimEnd('\') + '\'
+    $patchFullPath = [System.IO.Path]::GetFullPath($ResolvedPatch)
+
+    if ($patchFullPath.StartsWith(
+        $mainPrefix,
+        [System.StringComparison]::OrdinalIgnoreCase
+    )) {
+        throw "Store the candidate patch outside mock_python_repo."
+    }
+
+    # Read the authoritative P0-01 task definition.
+    $manifest = Get-Content $ManifestPath -Raw | ConvertFrom-Json
+    $tasks = @($manifest.tasks | Where-Object { $_.task_id -eq "P0-01" })
+
+    if ($tasks.Count -ne 1) {
+        throw "Expected exactly one P0-01 task in tasks.json."
+    }
+
+    $task = $tasks[0]
+    $targetCommit = [string]$task.base_revision
+
+    if ($targetCommit -notmatch '^[0-9a-fA-F]{40}$') {
+        throw "P0-01 base_revision must be a full 40-character commit hash."
+    }
+
+    # Verify the main repository is clean before resetting anything.
+    $mainStatus = Get-GitStatus $MainRepoRoot
+    if ($mainStatus) {
+        throw "Main repository is dirty. Commit or resolve changes first:`n$mainStatus"
+    }
+
+    # Refuse to discard any worktree changes.
+    $worktreeStatus = Get-GitStatus $WorktreePath
+    if ($worktreeStatus) {
+        throw "Evaluation worktree is dirty. No changes were removed:`n$worktreeStatus"
+    }
+
+    # Verify the worktree root is the expected directory.
+    $actualRoot = (Invoke-Git $WorktreePath @(
+        "rev-parse", "--show-toplevel"
+    ) | Select-Object -First 1).Trim()
+
+    $actualRoot = [System.IO.Path]::GetFullPath(
+        $actualRoot.Replace('/', '\')
+    ).TrimEnd('\')
+
+    $expectedRoot = [System.IO.Path]::GetFullPath(
+        $WorktreePath
+    ).TrimEnd('\')
+
+    if (-not $actualRoot.Equals(
+        $expectedRoot,
+        [System.StringComparison]::OrdinalIgnoreCase
+    )) {
+        throw "Unexpected evaluation worktree root."
+    }
+
+    # Reset only through the existing safety-checked reset script.
+    & $ResetScript
+
+    $startingCommit = (Invoke-Git $WorktreePath @(
+        "rev-parse", "HEAD"
+    ) | Select-Object -First 1).Trim()
+
+    if ($startingCommit -ne $targetCommit) {
+        throw "Starting revision differs from the manifest revision."
+    }
+
+    $Result.starting_revision = $startingCommit
+
+    # Establish whether the defect is reproducible before evaluating a patch.
+    Write-Host "`nRunning targeted P0-01 baseline tests..."
+
+    $baseline = Invoke-Pytest $WorktreePath @(
+        "tests/test_discounts.py", "-q"
+    )
+
+    $Result.baseline = $baseline
+    $Result.diagnostics.baseline_tests_passed = ($baseline.exit_code -eq 0)
+    Write-Host $baseline.output
+
+    # Require the two known boundary failures and the observed test counts.
+    $expectedFailures = @(
+        "test_discount_rate_boundaries\[100-0\.05\]",
+        "test_discounted_total"
+    ) 
+
+    $failureSignatureMatches = @(
+        $expectedFailures | Where-Object {
+            $baseline.output -match $_
+        }
+    ).Count -eq $expectedFailures.Count
+
+    $expectedSummaryMatches = (
+        $baseline.output -match "2 failed, 5 passed"
+    )
+
+    if (
+        $baseline.exit_code -eq 0 -or
+        -not $failureSignatureMatches -or
+        -not $expectedSummaryMatches
+    ) {
+        throw "Baseline signature mismatch. Expected exactly the known P0-01 test outcome (2 failures, 5 passes). Candidate patch was not applied."
+    }
+        # Record the full-suite outcome before applying the candidate patch.
+    Write-Host "`nRunning full-suite faulty-baseline tests..."
+
+    $fullBaseline = Invoke-Pytest $WorktreePath
+    $Result.full_suite_baseline = $fullBaseline
+    $Result.diagnostics.full_suite_baseline_passed = (
+        $fullBaseline.exit_code -eq 0
+    )
+
+    Write-Host $fullBaseline.output
+
+    if (
+        $fullBaseline.exit_code -eq 0 -or
+        $fullBaseline.output -notmatch "3 failed, 13 passed"
+    ) {
+        throw "Full-suite baseline signature mismatch. Candidate patch was not applied."
+    }
+
+    # Check that the patch applies without changing any files.
+    $checkOutput = & git -C $WorktreePath apply --check $ResolvedPatch 2>&1
+    $checkExitCode = $LASTEXITCODE
+
+    $Result.patch_check_output = ($checkOutput | Out-String).Trim()
+    $Result.diagnostics.patch_check_passed = ($checkExitCode -eq 0)
+
+    if ($checkExitCode -ne 0) {
+        throw "Patch check failed; the patch was not applied."
+    }
+
+    & git -C $WorktreePath apply $ResolvedPatch
+    if ($LASTEXITCODE -ne 0) {
+        throw "Patch application failed."
+    }
+
+    $Result.patch_applies = $true
+
+    # Include tracked, staged, and untracked paths in scope checks.
+    $changedPaths = @(Get-ChangedPaths $WorktreePath)
+    $Result.changed_paths = $changedPaths
+
+    $allowedPath = "src/discounts.py"
+    $scopeCompliant = (
+        $changedPaths.Count -eq 1 -and
+        $changedPaths[0] -ceq $allowedPath
+    )
+
+    $protectedPrefixes = @($task.protected_paths | ForEach-Object {
+        ([string]$_).Replace('\', '/')
+    })
+
+    $protectedChanges = @(
+        $changedPaths | Where-Object {
+            $changed = $_
+            @($protectedPrefixes | Where-Object {
+                $prefix = $_
+                $changed -eq $prefix.TrimEnd('/') -or
+                    $changed.StartsWith($prefix)
+            }).Count -gt 0
+        }
+    )
+
+    $Result.protected_paths_changed = $protectedChanges
+    $Result.scope_compliant = $scopeCompliant
+    $Result.diagnostics.scope_compliant = $scopeCompliant
+
+    # Test the candidate even when its scope is wrong, to preserve diagnostics.
+    Write-Host "`nRunning candidate tests..."
+    $candidate = Invoke-Pytest $WorktreePath
+    $Result.tests_after_patch = $candidate
+    $Result.diagnostics.candidate_tests_passed = ($candidate.exit_code -eq 0)
+    Write-Host $candidate.output
+
+    $Result.accepted = (
+        $baseline.exit_code -ne 0 -and
+        $fullBaseline.exit_code -ne 0 -and
+        $candidate.exit_code -eq 0 -and
+        $scopeCompliant -and
+        $protectedChanges.Count -eq 0
+    )
+
+    if (-not $scopeCompliant) {
+        $Result.note = "Rejected: changes must be limited to src/discounts.py."
+    }
+    
+    elseif ($protectedChanges.Count -gt 0) {
+        $Result.note = "Rejected: one or more protected paths were changed."
+    }   
+    elseif ($candidate.exit_code -ne 0) {
+        $Result.note = "Rejected: candidate test suite did not pass."
+    }
+    else {
+        $Result.note = "Accepted by first-pass baseline, test, and scope criteria only."
+    }
+}
+catch {
+    $Result.error = $_.Exception.Message
+    Write-Host "Evaluation error: $($Result.error)" -ForegroundColor Yellow
+}
+finally {
+    try {
+        Save-RunResult
+    }
+    catch {
+        Write-Host "WARNING: Could not save the JSON result: $($_.Exception.Message)" -ForegroundColor Red
+    }
+}
+
+if ($Result.error) {
+    throw $Result.error
+}
+
+Write-Host "`nPrimary acceptance: $($Result.accepted)"
+Write-Host "Scope compliant: $($Result.scope_compliant)"
+Write-Host "Evaluation worktree has been preserved for inspection."
+
+
+================================================================================
+RUN RECORD SUMMARIES
+================================================================================
+
+RUN: P0-01_0a59ad8a28604fc8990f9ba432213f39.json
+{
+    "schema_version":  "1.0",
+    "run_id":  "0a59ad8a28604fc8990f9ba432213f39",
+    "task_id":  "P0-01",
+    "starting_revision":  "5031d40726db0404a06fab9808ef6bb699b86383",
+    "patch_path":  "E:\\Gemma_4_Agent\\candidate_p0_01_no_match.patch",
+    "baseline":  {
+                     "exit_code":  1,
+                     "output":  "..F...F                                                                  [100%]\r\n================================== FAILURES ===================================\r\n___________________ test_discount_rate_boundaries[100-0.05] ___________________\r\n\r\nsubtotal = 100, expected = 0.05\r\n\r\n    @pytest.mark.parametrize((\"subtotal\", \"expected\"), [(0,0.0),(99.99,0.0),(100,0.05),(499.99,0.05),(500,0.10),(750,0.10)])\r\n    def test_discount_rate_boundaries(subtotal, expected):\r\n\u003e       assert discount_rate(subtotal) == expected\r\nE       assert 0.0 == 0.05\r\nE        +  where 0.0 = discount_rate(100)\r\n\r\ntests\\test_discounts.py:6: AssertionError\r\n____________________________ test_discounted_total ____________________________\r\n\r\n    def test_discounted_total():\r\n\u003e       assert discounted_total(100.0) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = discounted_total(100.0)\r\n\r\ntests\\test_discounts.py:9: AssertionError\r\n=========================== short test summary info ===========================\r\nFAILED tests/test_discounts.py::test_discount_rate_boundaries[100-0.05] - ass...\r\nFAILED tests/test_discounts.py::test_discounted_total - assert 100.0 == 95.0\r\n2 failed, 5 passed in 0.06s"
+                 },
+    "full_suite_baseline":  {
+                                "exit_code":  1,
+                                "output":  "============================= test session starts =============================\r\nplatform win32 -- Python 3.11.5, pytest-8.4.2, pluggy-1.7.0\r\nrootdir: E:\\Gemma_4_Agent\\p0-01-evaluation\r\nconfigfile: pytest.ini\r\ntestpaths: tests\r\ncollected 16 items\r\n\r\ntests\\test_discounts.py ..F...F                                          [ 43%]\r\ntests\\test_formatting.py ..                                              [ 56%]\r\ntests\\test_inventory.py ...                                              [ 75%]\r\ntests\\test_pricing.py F...                                               [100%]\r\n\r\n================================== FAILURES ===================================\r\n___________________ test_discount_rate_boundaries[100-0.05] ___________________\r\n\r\nsubtotal = 100, expected = 0.05\r\n\r\n    @pytest.mark.parametrize((\"subtotal\", \"expected\"), [(0,0.0),(99.99,0.0),(100,0.05),(499.99,0.05),(500,0.10),(750,0.10)])\r\n    def test_discount_rate_boundaries(subtotal, expected):\r\n\u003e       assert discount_rate(subtotal) == expected\r\nE       assert 0.0 == 0.05\r\nE        +  where 0.0 = discount_rate(100)\r\n\r\ntests\\test_discounts.py:6: AssertionError\r\n____________________________ test_discounted_total ____________________________\r\n\r\n    def test_discounted_total():\r\n\u003e       assert discounted_total(100.0) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = discounted_total(100.0)\r\n\r\ntests\\test_discounts.py:9: AssertionError\r\n______________________ test_order_price_applies_discount ______________________\r\n\r\n    def test_order_price_applies_discount():\r\n\u003e       assert price_order(25.0, 4) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = price_order(25.0, 4)\r\n\r\ntests\\test_pricing.py:5: AssertionError\r\n=========================== short test summary info ===========================\r\nFAILED tests/test_discounts.py::test_discount_rate_boundaries[100-0.05] - ass...\r\nFAILED tests/test_discounts.py::test_discounted_total - assert 100.0 == 95.0\r\nFAILED tests/test_pricing.py::test_order_price_applies_discount - assert 100....\r\n======================== 3 failed, 13 passed in 0.13s ========================="
+                            },
+    "patch_applies":  false,
+    "patch_check_output":  null,
+    "tests_after_patch":  null,
+    "changed_paths":  [
+
+                      ],
+    "protected_paths_changed":  [
+
+                                ],
+    "scope_compliant":  false,
+    "accepted":  false,
+    "diagnostics":  {
+                        "baseline_tests_passed":  false,
+                        "candidate_tests_passed":  null,
+                        "patch_check_passed":  false,
+                        "scope_compliant":  false,
+                        "full_suite_baseline_passed":  false
+                    },
+    "error":  "error: patch failed: src/discounts.py:1",
+    "note":  "Local first-pass evaluator; not a secure sandbox or hidden-test evaluator."
+}
+
+RUN: P0-01_5520506d564a4e3683aa65bbf23839e7.json
+{
+    "schema_version":  "1.0",
+    "run_id":  "5520506d564a4e3683aa65bbf23839e7",
+    "task_id":  "P0-01",
+    "starting_revision":  "5031d40726db0404a06fab9808ef6bb699b86383",
+    "patch_path":  "E:\\Gemma_4_Agent\\candidate_p0_01_test_failure.patch",
+    "baseline":  {
+                     "exit_code":  1,
+                     "output":  "..F...F                                                                  [100%]\r\n================================== FAILURES ===================================\r\n___________________ test_discount_rate_boundaries[100-0.05] ___________________\r\n\r\nsubtotal = 100, expected = 0.05\r\n\r\n    @pytest.mark.parametrize((\"subtotal\", \"expected\"), [(0,0.0),(99.99,0.0),(100,0.05),(499.99,0.05),(500,0.10),(750,0.10)])\r\n    def test_discount_rate_boundaries(subtotal, expected):\r\n\u003e       assert discount_rate(subtotal) == expected\r\nE       assert 0.0 == 0.05\r\nE        +  where 0.0 = discount_rate(100)\r\n\r\ntests\\test_discounts.py:6: AssertionError\r\n____________________________ test_discounted_total ____________________________\r\n\r\n    def test_discounted_total():\r\n\u003e       assert discounted_total(100.0) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = discounted_total(100.0)\r\n\r\ntests\\test_discounts.py:9: AssertionError\r\n=========================== short test summary info ===========================\r\nFAILED tests/test_discounts.py::test_discount_rate_boundaries[100-0.05] - ass...\r\nFAILED tests/test_discounts.py::test_discounted_total - assert 100.0 == 95.0\r\n2 failed, 5 passed in 0.10s"
+                 },
+    "full_suite_baseline":  {
+                                "exit_code":  1,
+                                "output":  "============================= test session starts =============================\r\nplatform win32 -- Python 3.11.5, pytest-8.4.2, pluggy-1.7.0\r\nrootdir: E:\\Gemma_4_Agent\\p0-01-evaluation\r\nconfigfile: pytest.ini\r\ntestpaths: tests\r\ncollected 16 items\r\n\r\ntests\\test_discounts.py ..F...F                                          [ 43%]\r\ntests\\test_formatting.py ..                                              [ 56%]\r\ntests\\test_inventory.py ...                                              [ 75%]\r\ntests\\test_pricing.py F...                                               [100%]\r\n\r\n================================== FAILURES ===================================\r\n___________________ test_discount_rate_boundaries[100-0.05] ___________________\r\n\r\nsubtotal = 100, expected = 0.05\r\n\r\n    @pytest.mark.parametrize((\"subtotal\", \"expected\"), [(0,0.0),(99.99,0.0),(100,0.05),(499.99,0.05),(500,0.10),(750,0.10)])\r\n    def test_discount_rate_boundaries(subtotal, expected):\r\n\u003e       assert discount_rate(subtotal) == expected\r\nE       assert 0.0 == 0.05\r\nE        +  where 0.0 = discount_rate(100)\r\n\r\ntests\\test_discounts.py:6: AssertionError\r\n____________________________ test_discounted_total ____________________________\r\n\r\n    def test_discounted_total():\r\n\u003e       assert discounted_total(100.0) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = discounted_total(100.0)\r\n\r\ntests\\test_discounts.py:9: AssertionError\r\n______________________ test_order_price_applies_discount ______________________\r\n\r\n    def test_order_price_applies_discount():\r\n\u003e       assert price_order(25.0, 4) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = price_order(25.0, 4)\r\n\r\ntests\\test_pricing.py:5: AssertionError\r\n=========================== short test summary info ===========================\r\nFAILED tests/test_discounts.py::test_discount_rate_boundaries[100-0.05] - ass...\r\nFAILED tests/test_discounts.py::test_discounted_total - assert 100.0 == 95.0\r\nFAILED tests/test_pricing.py::test_order_price_applies_discount - assert 100....\r\n======================== 3 failed, 13 passed in 0.13s ========================="
+                            },
+    "patch_applies":  true,
+    "patch_check_output":  "",
+    "tests_after_patch":  {
+                              "exit_code":  1,
+                              "output":  "============================= test session starts =============================\r\nplatform win32 -- Python 3.11.5, pytest-8.4.2, pluggy-1.7.0\r\nrootdir: E:\\Gemma_4_Agent\\p0-01-evaluation\r\nconfigfile: pytest.ini\r\ntestpaths: tests\r\ncollected 16 items\r\n\r\ntests\\test_discounts.py ....F..                                          [ 43%]\r\ntests\\test_formatting.py ..                                              [ 56%]\r\ntests\\test_inventory.py ...                                              [ 75%]\r\ntests\\test_pricing.py ....                                               [100%]\r\n\r\n================================== FAILURES ===================================\r\n___________________ test_discount_rate_boundaries[500-0.1] ____________________\r\n\r\nsubtotal = 500, expected = 0.1\r\n\r\n    @pytest.mark.parametrize((\"subtotal\", \"expected\"), [(0,0.0),(99.99,0.0),(100,0.05),(499.99,0.05),(500,0.10),(750,0.10)])\r\n    def test_discount_rate_boundaries(subtotal, expected):\r\n\u003e       assert discount_rate(subtotal) == expected\r\nE       assert 0.05 == 0.1\r\nE        +  where 0.05 = discount_rate(500)\r\n\r\ntests\\test_discounts.py:6: AssertionError\r\n=========================== short test summary info ===========================\r\nFAILED tests/test_discounts.py::test_discount_rate_boundaries[500-0.1] - asse...\r\n======================== 1 failed, 15 passed in 0.12s ========================="
+                          },
+    "changed_paths":  [
+                          "src/discounts.py"
+                      ],
+    "protected_paths_changed":  [
+
+                                ],
+    "scope_compliant":  true,
+    "accepted":  false,
+    "diagnostics":  {
+                        "baseline_tests_passed":  false,
+                        "candidate_tests_passed":  false,
+                        "patch_check_passed":  true,
+                        "scope_compliant":  true,
+                        "full_suite_baseline_passed":  false
+                    },
+    "error":  null,
+    "note":  "Rejected: candidate test suite did not pass."
+}
+
+RUN: P0-01_5c8b6b50f9c74d7d9f9e3b871b20121b.json
+{
+    "schema_version":  "1.0",
+    "run_id":  "5c8b6b50f9c74d7d9f9e3b871b20121b",
+    "task_id":  "P0-01",
+    "starting_revision":  "5031d40726db0404a06fab9808ef6bb699b86383",
+    "patch_path":  "E:\\Gemma_4_Agent\\candidate_p0_01_protected.patch",
+    "baseline":  {
+                     "exit_code":  1,
+                     "output":  "..F...F                                                                  [100%]\r\n================================== FAILURES ===================================\r\n___________________ test_discount_rate_boundaries[100-0.05] ___________________\r\n\r\nsubtotal = 100, expected = 0.05\r\n\r\n    @pytest.mark.parametrize((\"subtotal\", \"expected\"), [(0,0.0),(99.99,0.0),(100,0.05),(499.99,0.05),(500,0.10),(750,0.10)])\r\n    def test_discount_rate_boundaries(subtotal, expected):\r\n\u003e       assert discount_rate(subtotal) == expected\r\nE       assert 0.0 == 0.05\r\nE        +  where 0.0 = discount_rate(100)\r\n\r\ntests\\test_discounts.py:6: AssertionError\r\n____________________________ test_discounted_total ____________________________\r\n\r\n    def test_discounted_total():\r\n\u003e       assert discounted_total(100.0) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = discounted_total(100.0)\r\n\r\ntests\\test_discounts.py:9: AssertionError\r\n=========================== short test summary info ===========================\r\nFAILED tests/test_discounts.py::test_discount_rate_boundaries[100-0.05] - ass...\r\nFAILED tests/test_discounts.py::test_discounted_total - assert 100.0 == 95.0\r\n2 failed, 5 passed in 0.06s"
+                 },
+    "full_suite_baseline":  {
+                                "exit_code":  1,
+                                "output":  "============================= test session starts =============================\r\nplatform win32 -- Python 3.11.5, pytest-8.4.2, pluggy-1.7.0\r\nrootdir: E:\\Gemma_4_Agent\\p0-01-evaluation\r\nconfigfile: pytest.ini\r\ntestpaths: tests\r\ncollected 16 items\r\n\r\ntests\\test_discounts.py ..F...F                                          [ 43%]\r\ntests\\test_formatting.py ..                                              [ 56%]\r\ntests\\test_inventory.py ...                                              [ 75%]\r\ntests\\test_pricing.py F...                                               [100%]\r\n\r\n================================== FAILURES ===================================\r\n___________________ test_discount_rate_boundaries[100-0.05] ___________________\r\n\r\nsubtotal = 100, expected = 0.05\r\n\r\n    @pytest.mark.parametrize((\"subtotal\", \"expected\"), [(0,0.0),(99.99,0.0),(100,0.05),(499.99,0.05),(500,0.10),(750,0.10)])\r\n    def test_discount_rate_boundaries(subtotal, expected):\r\n\u003e       assert discount_rate(subtotal) == expected\r\nE       assert 0.0 == 0.05\r\nE        +  where 0.0 = discount_rate(100)\r\n\r\ntests\\test_discounts.py:6: AssertionError\r\n____________________________ test_discounted_total ____________________________\r\n\r\n    def test_discounted_total():\r\n\u003e       assert discounted_total(100.0) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = discounted_total(100.0)\r\n\r\ntests\\test_discounts.py:9: AssertionError\r\n______________________ test_order_price_applies_discount ______________________\r\n\r\n    def test_order_price_applies_discount():\r\n\u003e       assert price_order(25.0, 4) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = price_order(25.0, 4)\r\n\r\ntests\\test_pricing.py:5: AssertionError\r\n=========================== short test summary info ===========================\r\nFAILED tests/test_discounts.py::test_discount_rate_boundaries[100-0.05] - ass...\r\nFAILED tests/test_discounts.py::test_discounted_total - assert 100.0 == 95.0\r\nFAILED tests/test_pricing.py::test_order_price_applies_discount - assert 100....\r\n======================== 3 failed, 13 passed in 0.13s ========================="
+                            },
+    "patch_applies":  true,
+    "patch_check_output":  "",
+    "tests_after_patch":  {
+                              "exit_code":  0,
+                              "output":  "============================= test session starts =============================\r\nplatform win32 -- Python 3.11.5, pytest-8.4.2, pluggy-1.7.0\r\nrootdir: E:\\Gemma_4_Agent\\p0-01-evaluation\r\nconfigfile: pytest.ini\r\ntestpaths: tests\r\ncollected 16 items\r\n\r\ntests\\test_discounts.py .......                                          [ 43%]\r\ntests\\test_formatting.py ..                                              [ 56%]\r\ntests\\test_inventory.py ...                                              [ 75%]\r\ntests\\test_pricing.py ....                                               [100%]\r\n\r\n============================= 16 passed in 0.04s =============================="
+                          },
+    "changed_paths":  [
+                          "src/discounts.py",
+                          "tests/test_discounts.py"
+                      ],
+    "protected_paths_changed":  [
+                                    "tests/test_discounts.py"
+                                ],
+    "scope_compliant":  false,
+    "accepted":  false,
+    "diagnostics":  {
+                        "baseline_tests_passed":  false,
+                        "candidate_tests_passed":  true,
+                        "patch_check_passed":  true,
+                        "scope_compliant":  false,
+                        "full_suite_baseline_passed":  false
+                    },
+    "error":  null,
+    "note":  "Rejected: changes must be limited to src/discounts.py."
+}
+
+RUN: P0-01_6377c0bdf3f142a3894c693cfa110fb6.json
+{
+    "schema_version":  "1.0",
+    "run_id":  "6377c0bdf3f142a3894c693cfa110fb6",
+    "task_id":  "P0-01",
+    "starting_revision":  "5031d40726db0404a06fab9808ef6bb699b86383",
+    "patch_path":  "E:\\Gemma_4_Agent\\candidate_p0_01.patch",
+    "baseline":  {
+                     "exit_code":  1,
+                     "output":  "..F...F                                                                  [100%]\r\n================================== FAILURES ===================================\r\n___________________ test_discount_rate_boundaries[100-0.05] ___________________\r\n\r\nsubtotal = 100, expected = 0.05\r\n\r\n    @pytest.mark.parametrize((\"subtotal\", \"expected\"), [(0,0.0),(99.99,0.0),(100,0.05),(499.99,0.05),(500,0.10),(750,0.10)])\r\n    def test_discount_rate_boundaries(subtotal, expected):\r\n\u003e       assert discount_rate(subtotal) == expected\r\nE       assert 0.0 == 0.05\r\nE        +  where 0.0 = discount_rate(100)\r\n\r\ntests\\test_discounts.py:6: AssertionError\r\n____________________________ test_discounted_total ____________________________\r\n\r\n    def test_discounted_total():\r\n\u003e       assert discounted_total(100.0) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = discounted_total(100.0)\r\n\r\ntests\\test_discounts.py:9: AssertionError\r\n=========================== short test summary info ===========================\r\nFAILED tests/test_discounts.py::test_discount_rate_boundaries[100-0.05] - ass...\r\nFAILED tests/test_discounts.py::test_discounted_total - assert 100.0 == 95.0\r\n2 failed, 5 passed in 0.07s"
+                 },
+    "full_suite_baseline":  {
+                                "exit_code":  1,
+                                "output":  "============================= test session starts =============================\r\nplatform win32 -- Python 3.11.5, pytest-8.4.2, pluggy-1.7.0\r\nrootdir: E:\\Gemma_4_Agent\\p0-01-evaluation\r\nconfigfile: pytest.ini\r\ntestpaths: tests\r\ncollected 16 items\r\n\r\ntests\\test_discounts.py ..F...F                                          [ 43%]\r\ntests\\test_formatting.py ..                                              [ 56%]\r\ntests\\test_inventory.py ...                                              [ 75%]\r\ntests\\test_pricing.py F...                                               [100%]\r\n\r\n================================== FAILURES ===================================\r\n___________________ test_discount_rate_boundaries[100-0.05] ___________________\r\n\r\nsubtotal = 100, expected = 0.05\r\n\r\n    @pytest.mark.parametrize((\"subtotal\", \"expected\"), [(0,0.0),(99.99,0.0),(100,0.05),(499.99,0.05),(500,0.10),(750,0.10)])\r\n    def test_discount_rate_boundaries(subtotal, expected):\r\n\u003e       assert discount_rate(subtotal) == expected\r\nE       assert 0.0 == 0.05\r\nE        +  where 0.0 = discount_rate(100)\r\n\r\ntests\\test_discounts.py:6: AssertionError\r\n____________________________ test_discounted_total ____________________________\r\n\r\n    def test_discounted_total():\r\n\u003e       assert discounted_total(100.0) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = discounted_total(100.0)\r\n\r\ntests\\test_discounts.py:9: AssertionError\r\n______________________ test_order_price_applies_discount ______________________\r\n\r\n    def test_order_price_applies_discount():\r\n\u003e       assert price_order(25.0, 4) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = price_order(25.0, 4)\r\n\r\ntests\\test_pricing.py:5: AssertionError\r\n=========================== short test summary info ===========================\r\nFAILED tests/test_discounts.py::test_discount_rate_boundaries[100-0.05] - ass...\r\nFAILED tests/test_discounts.py::test_discounted_total - assert 100.0 == 95.0\r\nFAILED tests/test_pricing.py::test_order_price_applies_discount - assert 100....\r\n======================== 3 failed, 13 passed in 0.20s ========================="
+                            },
+    "patch_applies":  false,
+    "patch_check_output":  null,
+    "tests_after_patch":  null,
+    "changed_paths":  [
+
+                      ],
+    "protected_paths_changed":  [
+
+                                ],
+    "scope_compliant":  false,
+    "accepted":  false,
+    "diagnostics":  {
+                        "baseline_tests_passed":  false,
+                        "candidate_tests_passed":  null,
+                        "patch_check_passed":  false,
+                        "scope_compliant":  false,
+                        "full_suite_baseline_passed":  false
+                    },
+    "error":  "Full-suite baseline signature mismatch. Candidate patch was not applied.",
+    "note":  "Local first-pass evaluator; not a secure sandbox or hidden-test evaluator."
+}
+
+RUN: P0-01_892037fe55a6417289e64e45c93d8756.json
+{
+    "schema_version":  "1.0",
+    "run_id":  "892037fe55a6417289e64e45c93d8756",
+    "task_id":  "P0-01",
+    "starting_revision":  "5031d40726db0404a06fab9808ef6bb699b86383",
+    "patch_path":  "E:\\Gemma_4_Agent\\candidate_p0_01_no_match.patch",
+    "baseline":  {
+                     "exit_code":  1,
+                     "output":  "..F...F                                                                  [100%]\r\n================================== FAILURES ===================================\r\n___________________ test_discount_rate_boundaries[100-0.05] ___________________\r\n\r\nsubtotal = 100, expected = 0.05\r\n\r\n    @pytest.mark.parametrize((\"subtotal\", \"expected\"), [(0,0.0),(99.99,0.0),(100,0.05),(499.99,0.05),(500,0.10),(750,0.10)])\r\n    def test_discount_rate_boundaries(subtotal, expected):\r\n\u003e       assert discount_rate(subtotal) == expected\r\nE       assert 0.0 == 0.05\r\nE        +  where 0.0 = discount_rate(100)\r\n\r\ntests\\test_discounts.py:6: AssertionError\r\n____________________________ test_discounted_total ____________________________\r\n\r\n    def test_discounted_total():\r\n\u003e       assert discounted_total(100.0) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = discounted_total(100.0)\r\n\r\ntests\\test_discounts.py:9: AssertionError\r\n=========================== short test summary info ===========================\r\nFAILED tests/test_discounts.py::test_discount_rate_boundaries[100-0.05] - ass...\r\nFAILED tests/test_discounts.py::test_discounted_total - assert 100.0 == 95.0\r\n2 failed, 5 passed in 0.06s"
+                 },
+    "full_suite_baseline":  {
+                                "exit_code":  1,
+                                "output":  "============================= test session starts =============================\r\nplatform win32 -- Python 3.11.5, pytest-8.4.2, pluggy-1.7.0\r\nrootdir: E:\\Gemma_4_Agent\\p0-01-evaluation\r\nconfigfile: pytest.ini\r\ntestpaths: tests\r\ncollected 16 items\r\n\r\ntests\\test_discounts.py ..F...F                                          [ 43%]\r\ntests\\test_formatting.py ..                                              [ 56%]\r\ntests\\test_inventory.py ...                                              [ 75%]\r\ntests\\test_pricing.py F...                                               [100%]\r\n\r\n================================== FAILURES ===================================\r\n___________________ test_discount_rate_boundaries[100-0.05] ___________________\r\n\r\nsubtotal = 100, expected = 0.05\r\n\r\n    @pytest.mark.parametrize((\"subtotal\", \"expected\"), [(0,0.0),(99.99,0.0),(100,0.05),(499.99,0.05),(500,0.10),(750,0.10)])\r\n    def test_discount_rate_boundaries(subtotal, expected):\r\n\u003e       assert discount_rate(subtotal) == expected\r\nE       assert 0.0 == 0.05\r\nE        +  where 0.0 = discount_rate(100)\r\n\r\ntests\\test_discounts.py:6: AssertionError\r\n____________________________ test_discounted_total ____________________________\r\n\r\n    def test_discounted_total():\r\n\u003e       assert discounted_total(100.0) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = discounted_total(100.0)\r\n\r\ntests\\test_discounts.py:9: AssertionError\r\n______________________ test_order_price_applies_discount ______________________\r\n\r\n    def test_order_price_applies_discount():\r\n\u003e       assert price_order(25.0, 4) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = price_order(25.0, 4)\r\n\r\ntests\\test_pricing.py:5: AssertionError\r\n=========================== short test summary info ===========================\r\nFAILED tests/test_discounts.py::test_discount_rate_boundaries[100-0.05] - ass...\r\nFAILED tests/test_discounts.py::test_discounted_total - assert 100.0 == 95.0\r\nFAILED tests/test_pricing.py::test_order_price_applies_discount - assert 100....\r\n======================== 3 failed, 13 passed in 0.07s ========================="
+                            },
+    "patch_applies":  false,
+    "patch_check_output":  null,
+    "tests_after_patch":  null,
+    "changed_paths":  [
+
+                      ],
+    "protected_paths_changed":  [
+
+                                ],
+    "scope_compliant":  false,
+    "accepted":  false,
+    "diagnostics":  {
+                        "baseline_tests_passed":  false,
+                        "candidate_tests_passed":  null,
+                        "patch_check_passed":  false,
+                        "scope_compliant":  false,
+                        "full_suite_baseline_passed":  false
+                    },
+    "error":  "error: patch failed: src/discounts.py:1",
+    "note":  "Local first-pass evaluator; not a secure sandbox or hidden-test evaluator."
+}
+
+RUN: P0-01_a1bbff23fe194c74845c991ffaa9f312.json
+{
+    "schema_version":  "1.0",
+    "run_id":  "a1bbff23fe194c74845c991ffaa9f312",
+    "task_id":  "P0-01",
+    "starting_revision":  "5031d40726db0404a06fab9808ef6bb699b86383",
+    "patch_path":  "E:\\Gemma_4_Agent\\candidate_p0_01_invalid.patch",
+    "baseline":  {
+                     "exit_code":  1,
+                     "output":  "..F...F                                                                  [100%]\r\n================================== FAILURES ===================================\r\n___________________ test_discount_rate_boundaries[100-0.05] ___________________\r\n\r\nsubtotal = 100, expected = 0.05\r\n\r\n    @pytest.mark.parametrize((\"subtotal\", \"expected\"), [(0,0.0),(99.99,0.0),(100,0.05),(499.99,0.05),(500,0.10),(750,0.10)])\r\n    def test_discount_rate_boundaries(subtotal, expected):\r\n\u003e       assert discount_rate(subtotal) == expected\r\nE       assert 0.0 == 0.05\r\nE        +  where 0.0 = discount_rate(100)\r\n\r\ntests\\test_discounts.py:6: AssertionError\r\n____________________________ test_discounted_total ____________________________\r\n\r\n    def test_discounted_total():\r\n\u003e       assert discounted_total(100.0) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = discounted_total(100.0)\r\n\r\ntests\\test_discounts.py:9: AssertionError\r\n=========================== short test summary info ===========================\r\nFAILED tests/test_discounts.py::test_discount_rate_boundaries[100-0.05] - ass...\r\nFAILED tests/test_discounts.py::test_discounted_total - assert 100.0 == 95.0\r\n2 failed, 5 passed in 0.15s"
+                 },
+    "full_suite_baseline":  {
+                                "exit_code":  1,
+                                "output":  "============================= test session starts =============================\r\nplatform win32 -- Python 3.11.5, pytest-8.4.2, pluggy-1.7.0\r\nrootdir: E:\\Gemma_4_Agent\\p0-01-evaluation\r\nconfigfile: pytest.ini\r\ntestpaths: tests\r\ncollected 16 items\r\n\r\ntests\\test_discounts.py ..F...F                                          [ 43%]\r\ntests\\test_formatting.py ..                                              [ 56%]\r\ntests\\test_inventory.py ...                                              [ 75%]\r\ntests\\test_pricing.py F...                                               [100%]\r\n\r\n================================== FAILURES ===================================\r\n___________________ test_discount_rate_boundaries[100-0.05] ___________________\r\n\r\nsubtotal = 100, expected = 0.05\r\n\r\n    @pytest.mark.parametrize((\"subtotal\", \"expected\"), [(0,0.0),(99.99,0.0),(100,0.05),(499.99,0.05),(500,0.10),(750,0.10)])\r\n    def test_discount_rate_boundaries(subtotal, expected):\r\n\u003e       assert discount_rate(subtotal) == expected\r\nE       assert 0.0 == 0.05\r\nE        +  where 0.0 = discount_rate(100)\r\n\r\ntests\\test_discounts.py:6: AssertionError\r\n____________________________ test_discounted_total ____________________________\r\n\r\n    def test_discounted_total():\r\n\u003e       assert discounted_total(100.0) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = discounted_total(100.0)\r\n\r\ntests\\test_discounts.py:9: AssertionError\r\n______________________ test_order_price_applies_discount ______________________\r\n\r\n    def test_order_price_applies_discount():\r\n\u003e       assert price_order(25.0, 4) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = price_order(25.0, 4)\r\n\r\ntests\\test_pricing.py:5: AssertionError\r\n=========================== short test summary info ===========================\r\nFAILED tests/test_discounts.py::test_discount_rate_boundaries[100-0.05] - ass...\r\nFAILED tests/test_discounts.py::test_discounted_total - assert 100.0 == 95.0\r\nFAILED tests/test_pricing.py::test_order_price_applies_discount - assert 100....\r\n======================== 3 failed, 13 passed in 0.24s ========================="
+                            },
+    "patch_applies":  false,
+    "patch_check_output":  null,
+    "tests_after_patch":  null,
+    "changed_paths":  [
+
+                      ],
+    "protected_paths_changed":  [
+
+                                ],
+    "scope_compliant":  false,
+    "accepted":  false,
+    "diagnostics":  {
+                        "baseline_tests_passed":  false,
+                        "candidate_tests_passed":  null,
+                        "patch_check_passed":  false,
+                        "scope_compliant":  false,
+                        "full_suite_baseline_passed":  false
+                    },
+    "error":  "error: corrupt patch at E:/Gemma_4_Agent/candidate_p0_01_invalid.patch:7",
+    "note":  "Local first-pass evaluator; not a secure sandbox or hidden-test evaluator."
+}
+
+RUN: P0-01_b9922ac665aa4e84ae1a0431146015d3.json
+{
+    "schema_version":  "1.0",
+    "run_id":  "b9922ac665aa4e84ae1a0431146015d3",
+    "task_id":  "P0-01",
+    "starting_revision":  null,
+    "patch_path":  null,
+    "baseline":  null,
+    "full_suite_baseline":  null,
+    "patch_applies":  false,
+    "patch_check_output":  null,
+    "tests_after_patch":  null,
+    "changed_paths":  [
+
+                      ],
+    "protected_paths_changed":  [
+
+                                ],
+    "scope_compliant":  false,
+    "accepted":  false,
+    "diagnostics":  {
+                        "baseline_tests_passed":  null,
+                        "candidate_tests_passed":  null,
+                        "patch_check_passed":  false,
+                        "scope_compliant":  false,
+                        "full_suite_baseline_passed":  null
+                    },
+    "error":  "Illegal characters in path.",
+    "note":  "Local first-pass evaluator; not a secure sandbox or hidden-test evaluator."
+}
+
+RUN: P0-01_f1d85c19b64345f9bf0db9c77ec21ceb.json
+{
+    "schema_version":  "1.0",
+    "run_id":  "f1d85c19b64345f9bf0db9c77ec21ceb",
+    "task_id":  "P0-01",
+    "starting_revision":  null,
+    "patch_path":  "E:\\Gemma_4_Agent\\candidate_p0_01.patch",
+    "baseline":  null,
+    "full_suite_baseline":  null,
+    "patch_applies":  false,
+    "patch_check_output":  null,
+    "tests_after_patch":  null,
+    "changed_paths":  [
+
+                      ],
+    "protected_paths_changed":  [
+
+                                ],
+    "scope_compliant":  false,
+    "accepted":  false,
+    "diagnostics":  {
+                        "baseline_tests_passed":  null,
+                        "candidate_tests_passed":  null,
+                        "patch_check_passed":  false,
+                        "scope_compliant":  false,
+                        "full_suite_baseline_passed":  null
+                    },
+    "error":  "Main repository is dirty. Commit or resolve changes first:\nM src/discounts.py",
+    "note":  "Local first-pass evaluator; not a secure sandbox or hidden-test evaluator."
+}
+
+RUN: P0-01_f66580a2c3924799aaff7f2d7cc82ab6.json
+{
+    "schema_version":  "1.0",
+    "run_id":  "f66580a2c3924799aaff7f2d7cc82ab6",
+    "task_id":  "P0-01",
+    "starting_revision":  "5031d40726db0404a06fab9808ef6bb699b86383",
+    "patch_path":  "E:\\Gemma_4_Agent\\candidate_p0_01.patch",
+    "baseline":  {
+                     "exit_code":  1,
+                     "output":  "..F...F                                                                  [100%]\r\n================================== FAILURES ===================================\r\n___________________ test_discount_rate_boundaries[100-0.05] ___________________\r\n\r\nsubtotal = 100, expected = 0.05\r\n\r\n    @pytest.mark.parametrize((\"subtotal\", \"expected\"), [(0,0.0),(99.99,0.0),(100,0.05),(499.99,0.05),(500,0.10),(750,0.10)])\r\n    def test_discount_rate_boundaries(subtotal, expected):\r\n\u003e       assert discount_rate(subtotal) == expected\r\nE       assert 0.0 == 0.05\r\nE        +  where 0.0 = discount_rate(100)\r\n\r\ntests\\test_discounts.py:6: AssertionError\r\n____________________________ test_discounted_total ____________________________\r\n\r\n    def test_discounted_total():\r\n\u003e       assert discounted_total(100.0) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = discounted_total(100.0)\r\n\r\ntests\\test_discounts.py:9: AssertionError\r\n=========================== short test summary info ===========================\r\nFAILED tests/test_discounts.py::test_discount_rate_boundaries[100-0.05] - ass...\r\nFAILED tests/test_discounts.py::test_discounted_total - assert 100.0 == 95.0\r\n2 failed, 5 passed in 0.07s"
+                 },
+    "full_suite_baseline":  {
+                                "exit_code":  1,
+                                "output":  "============================= test session starts =============================\r\nplatform win32 -- Python 3.11.5, pytest-8.4.2, pluggy-1.7.0\r\nrootdir: E:\\Gemma_4_Agent\\p0-01-evaluation\r\nconfigfile: pytest.ini\r\ntestpaths: tests\r\ncollected 16 items\r\n\r\ntests\\test_discounts.py ..F...F                                          [ 43%]\r\ntests\\test_formatting.py ..                                              [ 56%]\r\ntests\\test_inventory.py ...                                              [ 75%]\r\ntests\\test_pricing.py F...                                               [100%]\r\n\r\n================================== FAILURES ===================================\r\n___________________ test_discount_rate_boundaries[100-0.05] ___________________\r\n\r\nsubtotal = 100, expected = 0.05\r\n\r\n    @pytest.mark.parametrize((\"subtotal\", \"expected\"), [(0,0.0),(99.99,0.0),(100,0.05),(499.99,0.05),(500,0.10),(750,0.10)])\r\n    def test_discount_rate_boundaries(subtotal, expected):\r\n\u003e       assert discount_rate(subtotal) == expected\r\nE       assert 0.0 == 0.05\r\nE        +  where 0.0 = discount_rate(100)\r\n\r\ntests\\test_discounts.py:6: AssertionError\r\n____________________________ test_discounted_total ____________________________\r\n\r\n    def test_discounted_total():\r\n\u003e       assert discounted_total(100.0) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = discounted_total(100.0)\r\n\r\ntests\\test_discounts.py:9: AssertionError\r\n______________________ test_order_price_applies_discount ______________________\r\n\r\n    def test_order_price_applies_discount():\r\n\u003e       assert price_order(25.0, 4) == 95.0\r\nE       assert 100.0 == 95.0\r\nE        +  where 100.0 = price_order(25.0, 4)\r\n\r\ntests\\test_pricing.py:5: AssertionError\r\n=========================== short test summary info ===========================\r\nFAILED tests/test_discounts.py::test_discount_rate_boundaries[100-0.05] - ass...\r\nFAILED tests/test_discounts.py::test_discounted_total - assert 100.0 == 95.0\r\nFAILED tests/test_pricing.py::test_order_price_applies_discount - assert 100....\r\n======================== 3 failed, 13 passed in 0.11s ========================="
+                            },
+    "patch_applies":  true,
+    "patch_check_output":  "",
+    "tests_after_patch":  {
+                              "exit_code":  0,
+                              "output":  "============================= test session starts =============================\r\nplatform win32 -- Python 3.11.5, pytest-8.4.2, pluggy-1.7.0\r\nrootdir: E:\\Gemma_4_Agent\\p0-01-evaluation\r\nconfigfile: pytest.ini\r\ntestpaths: tests\r\ncollected 16 items\r\n\r\ntests\\test_discounts.py .......                                          [ 43%]\r\ntests\\test_formatting.py ..                                              [ 56%]\r\ntests\\test_inventory.py ...                                              [ 75%]\r\ntests\\test_pricing.py ....                                               [100%]\r\n\r\n============================= 16 passed in 0.05s =============================="
+                          },
+    "changed_paths":  [
+                          "src/discounts.py"
+                      ],
+    "protected_paths_changed":  [
+
+                                ],
+    "scope_compliant":  true,
+    "accepted":  true,
+    "diagnostics":  {
+                        "baseline_tests_passed":  false,
+                        "candidate_tests_passed":  true,
+                        "patch_check_passed":  true,
+                        "scope_compliant":  true,
+                        "full_suite_baseline_passed":  false
+                    },
+    "error":  null,
+    "note":  "Accepted by first-pass baseline, test, and scope criteria only."
+}
