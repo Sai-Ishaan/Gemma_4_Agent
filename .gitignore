@@ -8,3 +8,41 @@ mock_python_repo\.venv
 mock_python_repo/
 candidate_p0_01*
 E:\Gemma_4_Agent\p0-01-patch-authoring
+
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Python generated files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Test and tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local secrets and environment configuration
+.env
+.env.*
+!.env.example
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# Local evaluation worktrees / experimental workspaces
+p0-01-evaluation/
+p0-01-patch-authoring/
+sandbox_tdd_worktree/
+
+# Optional: ignore raw run output if you choose to retain only curated records
+# runs/*
+# !runs/README.md
