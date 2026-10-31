@@ -2,6 +2,7 @@
 
 #### Competition and Research Reference:
 - The following is our submission for the [Gemma-4 Google Developer Agent Competition] (https://www.kaggle.com/competitions/gemma-4-developer-agent/overview) 
+- The following is the first version pre-print currently available giving details about the overall architecture, workflow, and methodology:[Evidence Guided Local Code Generation] (https://zenodo.org/records/23833483)
 
 #### Description
 A Research prototype for graph-guided, locally executed code repair with Gemma 4 post-training.
@@ -30,22 +31,7 @@ Post-train an open source model into a reliable agent for navigating complex cod
 
 #### Architecture at a Glace
  
-[Developer Issue and Constraints]
-                |
-                V
-[Targeted Context and Builder (Target function/file, local AST and dependency neighborhood, optimal bounded Git History)]                 
-                |
-                V
-[Local Model and specialised agentic workflow (Investigate and Diagnose, Propose a focused patch, request clarification when requirements are ambiguous)]
-                |
-                V
-[Deterministic Validation and Execution (Patch Applicability and Scope, Syntax Checks, Targeted tests and Regression tests, Structured Outocomes and Feedback)]
-                |
-                V
-[ Developer Reviews Proposed Changes]
-                |
-                V
-[Verified Outcomes Inform Evalution and Training Data]                    
+![alt text](image-2.png)                 
 
 #### Initial Approach: Model Distillation/Trajectory Replay Loop:
 
